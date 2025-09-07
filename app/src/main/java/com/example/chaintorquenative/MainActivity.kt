@@ -1,20 +1,116 @@
-package com.example.chaintorquenative
+// MainActivity for ChainTorque Mobile App - Jetpack Compose
+// Handles navigation and wallet state with Compose UI
+
+package com.chaintorque.mobile
 
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.chaintorque.mobile.ui.components.BottomNavigationBar
+import com.chaintorque.mobile.ui.screens.MarketplaceScreen
+import com.chaintorque.mobile.ui.screens.ProfileScreen
+import com.chaintorque.mobile.ui.screens.WalletScreen
+import com.chaintorque.mobile.ui.screens.SettingsScreen
+import com.chaintorque.mobile.ui.theme.ChainTorqueTheme
+import com.chaintorque.mobile.ui.viewmodels.MainViewModel
+import com.chaintorque.mobile.ui.viewmodels.WalletViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
-class MainActivity : AppCompatActivity() {
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+
+    private val walletViewModel: WalletViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        setContent {
+            ChainTorqueTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    ChainTorqueApp()
+                }
+            }
         }
+    }
+}
+
+@Composable
+fun ChainTorqueApp() {
+    val navController = rememberNavController()
+    val mainViewModel: MainViewModel = hiltViewModel()
+    val currentScreen by mainViewModel.currentScreen.observeAsState(MainViewModel.Screen.MARKETPLACE)
+
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(
+                currentScreen = currentScreen,
+                onScreenSelected = { screen ->
+                    mainViewModel.navigateToScreen(screen)
+                    when (screen) {
+                        MainViewModel.Screen.MARKETPLACE -> navController.navigate("marketplace")
+                        MainViewModel.Screen.PROFILE -> navController.navigate("profile")
+                        MainViewModel.Screen.WALLET -> navController.navigate("wallet")
+                        MainViewModel.Screen.SETTINGS -> navController.navigate("settings")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = "marketplace",
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            composable("marketplace") {
+                MarketplaceScreen(
+                    onNavigateToWallet = {
+                        mainViewModel.navigateToScreen(MainViewModel.Screen.WALLET)
+                        navController.navigate("wallet")
+                    }
+                )
+            }
+            composable("profile") {
+                ProfileScreen(
+                    onNavigateToWallet = {
+                        mainViewModel.navigateToScreen(MainViewModel.Screen.WALLET)
+                        navController.navigate("wallet")
+                    }
+                )
+            }
+            composable("wallet") {
+                WalletScreen()
+            }
+            composable("settings") {
+                SettingsScreen()
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ChainTorqueAppPreview() {
+    ChainTorqueTheme {
+        ChainTorqueApp()
     }
 }
