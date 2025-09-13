@@ -1,18 +1,18 @@
 // ViewModels for ChainTorque Mobile App
 // Handles UI state and business logic using MVVM pattern
 
-package com.chaintorque.mobile.ui.viewmodels
+package com.example.chaintorquenative.mobile.ui.viewmodels
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chaintorque.mobile.data.repository.MarketplaceRepository
-import com.chaintorque.mobile.data.repository.UserRepository
-import com.chaintorque.mobile.data.repository.Web3Repository
-import com.chaintorque.mobile.data.api.MarketplaceItem
-import com.chaintorque.mobile.data.api.UserNFT
-import com.chaintorque.mobile.data.api.UserProfile
+import com.example.chaintorquenative.mobile.data.repository.MarketplaceRepository
+import com.example.chaintorquenative.mobile.data.repository.UserRepository
+import com.example.chaintorquenative.mobile.data.repository.Web3Repository
+import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
+import com.example.chaintorquenative.mobile.data.api.UserNFT
+import com.example.chaintorquenative.mobile.data.api.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -78,9 +78,9 @@ class MarketplaceViewModel @Inject constructor(
             _filteredItems.value = items
         } else {
             _filteredItems.value = items.filter { item ->
-                item.name.contains(query, ignoreCase = true) ||
+                item.title.contains(query, ignoreCase = true) ||
                 item.description.contains(query, ignoreCase = true) ||
-                item.creator.contains(query, ignoreCase = true)
+                item.seller.name.contains(query, ignoreCase = true)
             }
         }
     }

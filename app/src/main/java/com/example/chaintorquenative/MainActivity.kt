@@ -1,7 +1,7 @@
 // MainActivity for ChainTorque Mobile App - Jetpack Compose
 // Handles navigation and wallet state with Compose UI
 
-package com.chaintorque.mobile
+package com.example.chaintorquenative
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -22,14 +22,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.chaintorque.mobile.ui.components.BottomNavigationBar
-import com.chaintorque.mobile.ui.screens.MarketplaceScreen
-import com.chaintorque.mobile.ui.screens.ProfileScreen
-import com.chaintorque.mobile.ui.screens.WalletScreen
-import com.chaintorque.mobile.ui.screens.SettingsScreen
-import com.chaintorque.mobile.ui.theme.ChainTorqueTheme
-import com.chaintorque.mobile.ui.viewmodels.MainViewModel
-import com.chaintorque.mobile.ui.viewmodels.WalletViewModel
+import com.example.chaintorquenative.ui.components.BottomNavigationBar
+import com.example.chaintorquenative.ui.screens.MarketplaceScreen
+import com.example.chaintorquenative.ui.screens.ProfileScreen
+import com.example.chaintorquenative.ui.screens.WalletScreen
+import com.example.chaintorquenative.ui.screens.SettingsScreen
+import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
+import com.example.chaintorquenative.ui.viewmodels.MainViewModel
+import com.example.chaintorquenative.ui.viewmodels.WalletViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

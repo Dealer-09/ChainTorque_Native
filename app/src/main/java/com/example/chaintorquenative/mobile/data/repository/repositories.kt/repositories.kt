@@ -1,13 +1,13 @@
 // Repository Pattern for ChainTorque Mobile App
 // Handles data operations and API calls
 
-package com.chaintorque.mobile.data.repository
+package com.example.chaintorquenative.mobile.data.repository
 
-import com.chaintorque.mobile.data.api.ChainTorqueApiService
-import com.chaintorque.mobile.data.api.MarketplaceItem
-import com.chaintorque.mobile.data.api.UserNFT
-import com.chaintorque.mobile.data.api.UserProfile
-import com.chaintorque.mobile.data.api.PurchaseRequest
+import com.example.chaintorquenative.mobile.data.api.ChainTorqueApiService
+import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
+import com.example.chaintorquenative.mobile.data.api.UserNFT
+import com.example.chaintorquenative.mobile.data.api.UserProfile
+import com.example.chaintorquenative.mobile.data.api.PurchaseRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject

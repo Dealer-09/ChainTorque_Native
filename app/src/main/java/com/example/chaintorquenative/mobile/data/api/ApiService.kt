@@ -1,7 +1,7 @@
 // API Service for ChainTorque Mobile App (Kotlin/Android)
 // This mirrors the web app's apiService.ts but in Kotlin
 
-package com.chaintorque.mobile.data.api
+package com.example.chaintorquenative.mobile.data.api
 
 import retrofit2.Response
 import retrofit2.http.*
