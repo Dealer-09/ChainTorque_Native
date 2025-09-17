@@ -15,10 +15,10 @@ data class ApiResponse<T>(
 )
 
 data class MarketplaceItem(
-    val tokenId: Int,
+    val tokenId: String,
     val title: String,
     val description: String,
-    val price: String,
+    val price: Double,
     val priceETH: Double?,
     val seller: Seller,
     val images: List<String>,
@@ -27,6 +27,7 @@ data class MarketplaceItem(
     val tags: List<String>,
     val views: Int,
     val likes: Int,
+    val name: String,
     val createdAt: String,
     val blockchain: String?,
     val format: String?

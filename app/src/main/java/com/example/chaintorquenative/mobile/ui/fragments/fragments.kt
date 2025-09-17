@@ -1,29 +1,34 @@
-// UI Fragments for ChainTorque Mobile App
-// Main screens implementing MVVM pattern with Material Design
-
-package com.chaintorque.mobile.ui.fragments
+package com.example.chaintorquenative.mobile.ui.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import com.example.chaintorquenative.databinding.FragmentMarketplaceBinding
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
+import com.example.chaintorquenative.ui.viewmodels.MainViewModel
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
-import com.chaintorque.mobile.ui.viewmodels.MarketplaceViewModel
-import com.chaintorque.mobile.ui.viewmodels.WalletViewModel
-import com.chaintorque.mobile.ui.viewmodels.UserProfileViewModel
-import com.chaintorque.mobile.ui.adapters.MarketplaceAdapter
-import com.chaintorque.mobile.ui.adapters.UserNFTAdapter
-import com.chaintorque.mobile.data.api.MarketplaceItem
+import com.example.chaintorquenative.mobile.ui.viewmodels.MarketplaceViewModel
+import com.example.chaintorquenative.mobile.ui.viewmodels.WalletViewModel
+import com.example.chaintorquenative.mobile.ui.viewmodels.UserProfileViewModel
+import com.example.chaintorquenative.mobile.ui.adapters.MarketplaceAdapter
+import com.example.chaintorquenative.mobile.ui.adapters.UserNFTAdapter
+import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
+import com.example.chaintorquenative.MainActivity
+import com.example.chaintorquenative.mobile.data.api.UserNFT
+import com.example.chaintorquenative.mobile.ui.bottomsheets.ItemDetailsBottomSheet
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+
 
 @AndroidEntryPoint
 class MarketplaceFragment : Fragment() {
@@ -72,7 +77,7 @@ class MarketplaceFragment : Fragment() {
     }
 
     private fun setupSearchView() {
-        binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 query?.let { viewModel.searchItems(it) }
                 return true
@@ -142,8 +147,7 @@ class MarketplaceFragment : Fragment() {
             .setTitle("Confirm Purchase")
             .setMessage("Purchase ${item.name} for ${item.price} ETH?")
             .setPositiveButton("Buy") { _, _ ->
-                viewModel.purchaseItem(item.tokenId, walletAddress, item.price)
-            }
+                viewModel.purchaseItem(item.tokenId.toInt(), walletAddress, item.price)            }
             .setNegativeButton("Cancel", null)
             .show()
     }
@@ -158,7 +162,6 @@ class MarketplaceFragment : Fragment() {
             .setTitle("Wallet Required")
             .setMessage("Please connect your wallet to make purchases")
             .setPositiveButton("Connect") { _, _ ->
-                // Navigate to wallet fragment
                 (activity as? MainActivity)?.navigateToWallet()
             }
             .setNegativeButton("Cancel", null)
@@ -471,67 +474,3 @@ class WalletFragment : Fragment() {
         _binding = null
     }
 }
-
-/*
-Additional Helper Classes:
-
-// Bottom Sheet for Item Details
-class ItemDetailsBottomSheet : BottomSheetDialogFragment() {
-
-    companion object {
-        fun newInstance(item: MarketplaceItem): ItemDetailsBottomSheet {
-            val fragment = ItemDetailsBottomSheet()
-            val args = Bundle()
-            args.putParcelable("item", item)
-            fragment.arguments = args
-            return fragment
-        }
-    }
-
-    private var _binding: BottomSheetItemDetailsBinding? = null
-    private val binding get() = _binding!!
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = BottomSheetItemDetailsBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        val item = arguments?.getParcelable<MarketplaceItem>("item")
-        item?.let { setupItemDetails(it) }
-    }
-
-    private fun setupItemDetails(item: MarketplaceItem) {
-        binding.textViewName.text = item.name
-        binding.textViewDescription.text = item.description
-        binding.textViewPrice.text = "${item.price} ETH"
-        binding.textViewCreator.text = "By ${item.creator}"
-
-        // Load item image
-        Glide.with(this)
-            .load(item.imageUrl)
-            .placeholder(R.drawable.placeholder_nft)
-            .into(binding.imageViewItem)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-}
-
-// MainActivity navigation methods
-fun MainActivity.navigateToWallet() {
-    // Navigate to wallet fragment
-    supportFragmentManager.beginTransaction()
-        .replace(R.id.fragment_container, WalletFragment())
-        .addToBackStack(null)
-        .commit()
-}
-*/
