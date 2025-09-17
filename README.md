@@ -73,32 +73,37 @@ ChainTorque Marketplace is a decentralized platform for trading CAD assets, buil
 ---
 
 ## 5. Android Feature Mapping
-### Core Features
-1. **User Authentication** — Register, login, manage profile (API)
-2. **Asset Browsing** — List assets, view details (API)
-3. **Buy/Sell/Transfer Assets** — Initiate via API (backend handles contract logic)
-4. **Upload Assets** — Upload CAD files/images (API)
-5. **Transaction History** — List user transactions (API)
+### Core Features (Implemented)
+1. **Asset Browsing** — List assets, view details (API)
+2. **Buy/Sell/Transfer Assets** — Purchase NFTs via API (backend handles contract logic)
+3. **Transaction History** — Tabs for owned NFTs, purchases, and sales (API)
+4. **Profile Management** — View user profile, stats, and wallet balance
+5. **Wallet Integration** — User connects wallet by entering address; wallet validation and balance fetching supported
+6. **Error Handling & Loading States** — Progress bars and snackbars for feedback
 
-### UI Screens (Jetpack Compose)
-- Splash/Login/Register
-- Asset List
-- Asset Detail
-- Upload Asset
-- Transaction History
-- Profile/Settings
+### Features To Be Added
+- **Asset Upload UI:** API endpoint exists, but UI for uploading assets is not yet implemented
+- **Authentication:** No email/password or social login; only wallet address-based profile
+- **Notifications/Real-Time Updates:** Not implemented
+- **Advanced Filtering/Sorting:** Basic search present; advanced filters not shown
+- **WalletConnect/MetaMask Integration:** Only manual address entry supported
+
+### UI Screens (Jetpack Compose & Fragments)
+- Marketplace (asset list, search, details, purchase)
+- User Profile (owned NFTs, purchases, sales)
+- Wallet (connect, view balance, QR scan placeholder)
+- Settings (if implemented)
 
 ---
 
 ## 6. Step-by-Step Working (A-Z)
 1. **User opens app**
-2. **Authenticate** (register/login via backend API)
-3. **Fetch assets** (GET /api/assets)
-4. **View asset details** (GET /api/assets/:id)
-5. **Upload asset** (POST /api/assets, upload file/image)
-6. **Buy/Sell/Transfer asset** (POST /api/transaction; backend handles contract call)
-7. **View transaction history** (GET /api/transaction)
-8. **Profile management** (GET/POST /api/user)
+2. **Connect wallet** (enter wallet address; no WalletConnect/MetaMask integration)
+3. **Browse marketplace** (view assets, search, see details)
+4. **Purchase assets** (confirm purchase, backend handles transaction)
+5. **View transaction history** (owned NFTs, purchases, sales)
+6. **View and manage profile** (profile info, wallet balance)
+7. **Upload asset** (UI not yet implemented; API endpoint available)
 
 ---
 
@@ -120,7 +125,9 @@ ChainTorque Marketplace is a decentralized platform for trading CAD assets, buil
 ## Final Notes
 - The Android app is a thin client: it only calls backend APIs and displays data
 - All blockchain, wallet, and database logic is handled by the backend
-- Asset uploads go through backend, stored on Lighthouse/IPFS
+- Asset uploads go through backend, stored on Lighthouse/IPFS (UI for upload needs to be added)
 - Transactions are logged both on-chain and in backend DB
+- Wallet integration is via manual address entry; no direct WalletConnect/MetaMask
+- Authentication is wallet-based; no email/password or social login
 
 ---
