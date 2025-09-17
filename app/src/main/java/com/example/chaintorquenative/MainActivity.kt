@@ -1,5 +1,3 @@
-
-
 package com.example.chaintorquenative
 
 import android.os.Bundle
@@ -22,8 +20,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.chaintorquenative.ui.components.BottomNavigationBar
-import com.example.chaintorquenative.ui.screens.MarketplaceScreen
-import com.example.chaintorquenative.ui.screens.ProfileScreen
+import com.example.chaintorquenative.ui.screens.MarketplaceScreen // This is your Composable Marketplace
+import com.example.chaintorquenative.ui.screens.ProfileScreen // This is your Composable Profile
 import com.example.chaintorquenative.ui.screens.WalletScreen
 import com.example.chaintorquenative.ui.screens.SettingsScreen
 import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
@@ -34,7 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val walletViewModel: WalletViewModel by viewModels()
+    // private val walletViewModel: WalletViewModel by viewModels() // Not used directly here for nav
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,17 +57,39 @@ fun ChainTorqueApp() {
     val mainViewModel: MainViewModel = hiltViewModel()
     val currentScreen by mainViewModel.currentScreen.observeAsState(MainViewModel.Screen.MARKETPLACE)
 
+    mainViewModel.navigateToWalletRequest.observeAsState().value?.getContentIfNotHandled()?.let {
+        // When triggered, update the current screen state and navigate using Compose NavController
+        mainViewModel.navigateToScreen(MainViewModel.Screen.WALLET)
+        navController.navigate("wallet") {
+            // Optional: Configure navigation behavior, e.g., launchSingleTop
+            launchSingleTop = true
+        }
+    }
+
     Scaffold(
         bottomBar = {
             BottomNavigationBar(
                 currentScreen = currentScreen,
                 onScreenSelected = { screen ->
                     mainViewModel.navigateToScreen(screen)
-                    when (screen) {
-                        MainViewModel.Screen.MARKETPLACE -> navController.navigate("marketplace")
-                        MainViewModel.Screen.PROFILE -> navController.navigate("profile")
-                        MainViewModel.Screen.WALLET -> navController.navigate("wallet")
-                        MainViewModel.Screen.SETTINGS -> navController.navigate("settings")
+                    val route = when (screen) {
+                        MainViewModel.Screen.MARKETPLACE -> "marketplace"
+                        MainViewModel.Screen.PROFILE -> "profile"
+                        MainViewModel.Screen.WALLET -> "wallet"
+                        MainViewModel.Screen.SETTINGS -> "settings"
+                    }
+                    navController.navigate(route) {
+                        // Pop up to the start destination of the graph to
+                        // avoid building up a large stack of destinations
+                        // on the back stack as users select items
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        // Avoid multiple copies of the same destination when
+                        // reselecting the same item
+                        launchSingleTop = true
+                        // Restore state when reselecting a previously selected item
+                        restoreState = true
                     }
                 }
             )
@@ -77,20 +97,26 @@ fun ChainTorqueApp() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "marketplace",
+            startDestination = "marketplace", // Assuming "marketplace" is a Composable screen
             modifier = Modifier.padding(paddingValues)
         ) {
+            // IMPORTANT: These routes are for your COMPOSABLE screens.
+            // If "marketplace" or "profile" should actually display the traditional Fragments,
+            // this NavHost setup needs to change significantly (e.g., using AndroidView to host Fragments).
+            // For this fix, I am assuming that "marketplace" and "profile" are Composable screens,
+            // and the Fragments are separate UI pieces that just need to trigger navigation.
+
             composable("marketplace") {
-                MarketplaceScreen(
-                    onNavigateToWallet = {
+                MarketplaceScreen( // Composable screen
+                    onNavigateToWallet = { // Navigation from within the Composable screen
                         mainViewModel.navigateToScreen(MainViewModel.Screen.WALLET)
                         navController.navigate("wallet")
                     }
                 )
             }
             composable("profile") {
-                ProfileScreen(
-                    onNavigateToWallet = {
+                ProfileScreen( // Composable screen
+                    onNavigateToWallet = { // Navigation from within the Composable screen
                         mainViewModel.navigateToScreen(MainViewModel.Screen.WALLET)
                         navController.navigate("wallet")
                     }
@@ -113,3 +139,4 @@ fun ChainTorqueAppPreview() {
         ChainTorqueApp()
     }
 }
+

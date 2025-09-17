@@ -1,5 +1,3 @@
-// ViewModels for ChainTorque Mobile App
-// Handles UI state and business logic using MVVM pattern
 
 package com.example.chaintorquenative.mobile.ui.viewmodels
 
@@ -371,43 +369,3 @@ class MainViewModel @Inject constructor() : ViewModel() {
         _showBottomSheet.value = false
     }
 }
-
-/*
-Usage in Fragment/Activity:
-
-class MarketplaceFragment : Fragment() {
-    
-    private val viewModel: MarketplaceViewModel by viewModels()
-    private val walletViewModel: WalletViewModel by activityViewModels()
-    
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        
-        // Observe marketplace items
-        viewModel.filteredItems.observe(viewLifecycleOwner) { items ->
-            adapter.submitList(items)
-        }
-        
-        // Observe loading state
-        viewModel.loading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.isVisible = isLoading
-        }
-        
-        // Observe errors
-        viewModel.error.observe(viewLifecycleOwner) { error ->
-            error?.let {
-                Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
-                viewModel.clearError()
-            }
-        }
-        
-        // Handle purchase success
-        viewModel.purchaseSuccess.observe(viewLifecycleOwner) { transactionHash ->
-            transactionHash?.let {
-                Snackbar.make(binding.root, "Purchase successful! TX: $it", Snackbar.LENGTH_LONG).show()
-                viewModel.clearPurchaseSuccess()
-            }
-        }
-    }
-}
-*/

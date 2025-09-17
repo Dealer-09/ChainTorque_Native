@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
+import com.example.chaintorquenative.ui.viewmodels.MainViewModel
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -160,7 +162,6 @@ class MarketplaceFragment : Fragment() {
             .setTitle("Wallet Required")
             .setMessage("Please connect your wallet to make purchases")
             .setPositiveButton("Connect") { _, _ ->
-                // Navigate to wallet fragment
                 (activity as? MainActivity)?.navigateToWallet()
             }
             .setNegativeButton("Cancel", null)
