@@ -1,10 +1,10 @@
 package com.example.chaintorquenative.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -19,7 +19,7 @@ fun BottomNavigationBar(
         val items = listOf(
             BottomNavItem(MainViewModel.Screen.MARKETPLACE, Icons.Default.Home, "Marketplace"),
             BottomNavItem(MainViewModel.Screen.PROFILE, Icons.Default.AccountCircle, "Profile"),
-            BottomNavItem(MainViewModel.Screen.WALLET, Icons.Default.AccountBalanceWallet, "Wallet"),
+            BottomNavItem(MainViewModel.Screen.WALLET, Icons.Filled.AccountBalanceWallet, "Wallet"),
             BottomNavItem(MainViewModel.Screen.SETTINGS, Icons.Default.Settings, "Settings")
         )
 

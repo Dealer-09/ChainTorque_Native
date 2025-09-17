@@ -1,5 +1,4 @@
-// MainActivity for ChainTorque Mobile App - Jetpack Compose
-// Handles navigation and wallet state with Compose UI
+
 
 package com.example.chaintorquenative
 
