@@ -21,6 +21,7 @@ import com.example.chaintorquenative.ui.screens.MarketplaceScreen
 import com.example.chaintorquenative.ui.screens.ProfileScreen
 import com.example.chaintorquenative.ui.screens.WalletScreen
 import com.example.chaintorquenative.ui.screens.SettingsScreen
+import com.example.chaintorquenative.ui.screens.AnimatedSplashScreen
 import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -33,7 +34,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ChainTorqueTheme {
-                ChainTorqueApp()
+                ChainTorqueAppWithSplash()
             }
         }
     }
@@ -42,6 +43,21 @@ class MainActivity : ComponentActivity() {
 // Screen enum for navigation
 enum class Screen {
     MARKETPLACE, PROFILE, WALLET, SETTINGS
+}
+
+@Composable
+fun ChainTorqueAppWithSplash() {
+    var showSplash by remember { mutableStateOf(true) }
+    
+    if (showSplash) {
+        AnimatedSplashScreen(
+            onSplashComplete = {
+                showSplash = false
+            }
+        )
+    } else {
+        ChainTorqueApp()
+    }
 }
 
 @Composable
