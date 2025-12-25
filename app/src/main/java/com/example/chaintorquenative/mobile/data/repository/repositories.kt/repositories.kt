@@ -1,76 +1,70 @@
-// Repository Pattern for ChainTorque Mobile App
-// Handles data operations and API calls
-
 package com.example.chaintorquenative.mobile.data.repository
 
-import com.example.chaintorquenative.mobile.data.api.ChainTorqueApiService
-import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
-import com.example.chaintorquenative.mobile.data.api.UserNFT
-import com.example.chaintorquenative.mobile.data.api.UserProfile
-import com.example.chaintorquenative.mobile.data.api.PurchaseRequest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.example.chaintorquenative.mobile.data.api.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Repository for marketplace-related operations
+ */
 @Singleton
 class MarketplaceRepository @Inject constructor(
     private val apiService: ChainTorqueApiService
 ) {
-    
-    // Get all marketplace items
-    suspend fun getMarketplaceItems(): Result<List<MarketplaceItem>> = withContext(Dispatchers.IO) {
-        try {
+    suspend fun getMarketplaceItems(): Result<List<MarketplaceItem>> {
+        return try {
             val response = apiService.getMarketplaceItems()
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data ?: emptyList())
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true && body.data != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Failed to load items"))
+                }
             } else {
-                Result.failure(Exception(response.body()?.error ?: "Failed to load marketplace items"))
+                Result.failure(Exception("API Error: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
-    // Get specific marketplace item
-    suspend fun getMarketplaceItem(tokenId: Int): Result<MarketplaceItem> = withContext(Dispatchers.IO) {
-        try {
+
+    suspend fun getMarketplaceItem(tokenId: Int): Result<MarketplaceItem> {
+        return try {
             val response = apiService.getMarketplaceItem(tokenId)
-            if (response.isSuccessful && response.body()?.success == true) {
-                response.body()?.data?.let {
-                    Result.success(it)
-                } ?: Result.failure(Exception("Item not found"))
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true && body.data != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Item not found"))
+                }
             } else {
-                Result.failure(Exception(response.body()?.error ?: "Failed to load item"))
+                Result.failure(Exception("API Error: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
-    // Purchase NFT
-    suspend fun purchaseNFT(tokenId: Int, buyerAddress: String, price: Double): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val request = PurchaseRequest(tokenId, buyerAddress, price)
-            val response = apiService.purchaseNFT(request)
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data?.transactionHash ?: "")
+
+    suspend fun syncPurchase(
+        tokenId: Int,
+        transactionHash: String,
+        buyerAddress: String,
+        price: Double
+    ): Result<MarketplaceItem> {
+        return try {
+            val request = SyncPurchaseRequest(tokenId, transactionHash, buyerAddress, price)
+            val response = apiService.syncPurchase(request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true && body.data != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Sync failed"))
+                }
             } else {
-                Result.failure(Exception(response.body()?.error ?: "Purchase failed"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
-    // Get marketplace stats
-    suspend fun getMarketplaceStats(): Result<Any> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getMarketplaceStats()
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data ?: Any())
-            } else {
-                Result.failure(Exception(response.body()?.error ?: "Failed to load stats"))
+                Result.failure(Exception("API Error: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -78,63 +72,79 @@ class MarketplaceRepository @Inject constructor(
     }
 }
 
+/**
+ * Repository for user-related operations
+ */
 @Singleton
 class UserRepository @Inject constructor(
     private val apiService: ChainTorqueApiService
 ) {
-    
-    // Get user's NFTs
-    suspend fun getUserNFTs(address: String): Result<List<UserNFT>> = withContext(Dispatchers.IO) {
-        try {
+    suspend fun getUserNFTs(address: String): Result<List<UserNFT>> {
+        return try {
             val response = apiService.getUserNFTs(address)
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data ?: emptyList())
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true && body.data != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Failed to load NFTs"))
+                }
             } else {
-                Result.failure(Exception(response.body()?.error ?: "Failed to load user NFTs"))
+                Result.failure(Exception("API Error: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
-    // Get user's purchase history
-    suspend fun getUserPurchases(address: String): Result<List<MarketplaceItem>> = withContext(Dispatchers.IO) {
-        try {
+
+    suspend fun getUserPurchases(address: String): Result<List<MarketplaceItem>> {
+        return try {
             val response = apiService.getUserPurchases(address)
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data ?: emptyList())
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true && body.data != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Failed to load purchases"))
+                }
             } else {
-                Result.failure(Exception(response.body()?.error ?: "Failed to load purchases"))
+                Result.failure(Exception("API Error: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
-    // Get user's sales history
-    suspend fun getUserSales(address: String): Result<List<MarketplaceItem>> = withContext(Dispatchers.IO) {
-        try {
+
+    suspend fun getUserSales(address: String): Result<List<MarketplaceItem>> {
+        return try {
             val response = apiService.getUserSales(address)
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data ?: emptyList())
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true && body.data != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Failed to load sales"))
+                }
             } else {
-                Result.failure(Exception(response.body()?.error ?: "Failed to load sales"))
+                Result.failure(Exception("API Error: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
-    // Get user profile
-    suspend fun getUserProfile(address: String): Result<UserProfile> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getUserProfile(address)
-            if (response.isSuccessful && response.body()?.success == true) {
-                response.body()?.data?.let {
-                    Result.success(it)
-                } ?: Result.failure(Exception("Profile not found"))
+
+    suspend fun registerUser(walletAddress: String): Result<UserProfile> {
+        return try {
+            val response = apiService.registerUser(mapOf("walletAddress" to walletAddress))
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true && body.data != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Registration failed"))
+                }
             } else {
-                Result.failure(Exception(response.body()?.error ?: "Failed to load profile"))
+                Result.failure(Exception("API Error: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -142,101 +152,44 @@ class UserRepository @Inject constructor(
     }
 }
 
+/**
+ * Repository for Web3/wallet-related operations
+ * Note: Actual blockchain transactions would be handled by WalletConnect/Web3
+ * This repository handles backend API calls related to Web3
+ */
 @Singleton
 class Web3Repository @Inject constructor(
     private val apiService: ChainTorqueApiService
 ) {
-    
-    // Check Web3 connection status
-    suspend fun getWeb3Status(): Result<Any> = withContext(Dispatchers.IO) {
-        try {
+    suspend fun getWeb3Status(): Result<Web3Status> {
+        return try {
             val response = apiService.getWeb3Status()
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data ?: Any())
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.success == true && body.data != null) {
+                    Result.success(body.data)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Failed to get Web3 status"))
+                }
             } else {
-                Result.failure(Exception(response.body()?.error ?: "Web3 not connected"))
+                Result.failure(Exception("API Error: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
-    // Validate wallet address
-    suspend fun validateAddress(address: String): Result<Boolean> = withContext(Dispatchers.IO) {
-        try {
-            val request = mapOf("address" to address)
-            val response = apiService.validateAddress(request)
-            if (response.isSuccessful && response.body()?.success == true) {
-                val isValid = response.body()?.data?.get("valid") ?: false
-                Result.success(isValid)
-            } else {
-                Result.failure(Exception(response.body()?.error ?: "Validation failed"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+
+    // Wallet address validation (client-side)
+    fun isValidEthereumAddress(address: String): Boolean {
+        return address.matches(Regex("^0x[a-fA-F0-9]{40}$"))
     }
-    
-    // Get wallet balance
-    suspend fun getBalance(address: String): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getBalance(address)
-            if (response.isSuccessful && response.body()?.success == true) {
-                val balance = response.body()?.data?.get("balance") ?: "0"
-                Result.success(balance)
-            } else {
-                Result.failure(Exception(response.body()?.error ?: "Failed to get balance"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+
+    // Format address for display
+    fun formatAddress(address: String): String {
+        return if (address.length > 10) {
+            "${address.take(6)}...${address.takeLast(4)}"
+        } else {
+            address
         }
     }
 }
-
-/*
-Usage in ViewModel:
-
-class MarketplaceViewModel @Inject constructor(
-    private val marketplaceRepository: MarketplaceRepository
-) : ViewModel() {
-    
-    private val _marketplaceItems = MutableLiveData<List<MarketplaceItem>>()
-    val marketplaceItems: LiveData<List<MarketplaceItem>> = _marketplaceItems
-    
-    private val _loading = MutableLiveData<Boolean>()
-    val loading: LiveData<Boolean> = _loading
-    
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
-    
-    fun loadMarketplaceItems() {
-        viewModelScope.launch {
-            _loading.value = true
-            marketplaceRepository.getMarketplaceItems()
-                .onSuccess { items ->
-                    _marketplaceItems.value = items
-                    _error.value = null
-                }
-                .onFailure { exception ->
-                    _error.value = exception.message
-                }
-            _loading.value = false
-        }
-    }
-    
-    fun purchaseItem(tokenId: Int, buyerAddress: String, price: Double) {
-        viewModelScope.launch {
-            _loading.value = true
-            marketplaceRepository.purchaseNFT(tokenId, buyerAddress, price)
-                .onSuccess { transactionHash ->
-                    // Handle successful purchase
-                    _error.value = null
-                }
-                .onFailure { exception ->
-                    _error.value = exception.message
-                }
-            _loading.value = false
-        }
-    }
-}
-*/

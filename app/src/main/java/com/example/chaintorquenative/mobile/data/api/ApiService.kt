@@ -6,7 +6,8 @@ package com.example.chaintorquenative.mobile.data.api
 import retrofit2.Response
 import retrofit2.http.*
 
-// Data Classes (Models)
+// Data Classes (Models) - Matching Backend API Response
+
 data class ApiResponse<T>(
     val success: Boolean,
     val data: T?,
@@ -14,51 +15,73 @@ data class ApiResponse<T>(
     val error: String?
 )
 
+// Backend returns seller as a String (wallet address), not an object
+// Also some fields may be null from the API
 data class MarketplaceItem(
-    val tokenId: String,
-    val title: String,
-    val description: String,
-    val price: Double,
-    val priceETH: Double?,
-    val seller: Seller,
-    val images: List<String>,
-    val modelUrl: String,
-    val category: String,
-    val tags: List<String>,
-    val views: Int,
-    val likes: Int,
-    val name: String,
-    val createdAt: String,
-    val blockchain: String?,
-    val format: String?
-)
+    val tokenId: String? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val price: Double? = null,
+    val priceETH: Double? = null,
+    val seller: String? = null,  // Backend returns wallet address as String
+    val owner: String? = null,
+    val images: List<String>? = null,
+    val imageUrl: String? = null,  // Some items have imageUrl instead of images
+    val modelUrl: String? = null,
+    val category: String? = null,
+    val tags: List<String>? = null,
+    val views: Int? = null,
+    val likes: Int? = null,
+    val name: String? = null,
+    val createdAt: String? = null,
+    val blockchain: String? = null,
+    val format: String? = null,
+    val status: String? = null,
+    val transactionHash: String? = null
+) {
+    // Helper to get first image URL
+    fun getDisplayImage(): String {
+        return images?.firstOrNull() ?: imageUrl ?: ""
+    }
 
-data class Seller(
-    val name: String,
-    val avatar: String,
-    val verified: Boolean,
-    val rating: Double,
-    val totalSales: Int
-)
+    // Helper to get display price
+    fun getDisplayPrice(): Double {
+        return priceETH ?: price ?: 0.0
+    }
+
+    // Helper to get short seller address
+    fun getShortSeller(): String {
+        val addr = seller ?: owner ?: ""
+        return if (addr.length > 10) "${addr.take(6)}...${addr.takeLast(4)}" else addr
+    }
+}
 
 data class UserNFT(
-    val tokenId: Int,
-    val title: String,
-    val description: String,
-    val image: String,
-    val modelUrl: String?,
-    val owner: String,
-    val createdAt: String
-)
+    val tokenId: Int? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val image: String? = null,
+    val imageUrl: String? = null,
+    val modelUrl: String? = null,
+    val owner: String? = null,
+    val createdAt: String? = null
+) {
+    fun getDisplayImage(): String {
+        return image ?: imageUrl ?: ""
+    }
+}
 
 data class UserProfile(
-    val address: String,
-    val name: String?,
-    val avatar: String?,
-    val verified: Boolean,
-    val totalNFTs: Int,
-    val totalSales: Int,
-    val memberSince: String
+    val address: String? = null,
+    val walletAddress: String? = null,
+    val name: String? = null,
+    val username: String? = null,
+    val avatar: String? = null,
+    val verified: Boolean? = null,
+    val totalNFTs: Int? = null,
+    val totalSales: Int? = null,
+    val totalPurchased: Int? = null,
+    val memberSince: String? = null
 )
 
 data class Web3Status(
@@ -78,6 +101,13 @@ data class PurchaseResponse(
     val transactionHash: String
 )
 
+data class SyncPurchaseRequest(
+    val tokenId: Int,
+    val transactionHash: String,
+    val buyerAddress: String,
+    val price: Double
+)
+
 // Retrofit API Interface
 interface ChainTorqueApiService {
 
@@ -85,7 +115,7 @@ interface ChainTorqueApiService {
     @GET("health")
     suspend fun healthCheck(): Response<Map<String, String>>
 
-    // Marketplace Endpoints
+    // Marketplace Endpoints - matches backend routes/marketplace.js
     @GET("api/marketplace")
     suspend fun getMarketplaceItems(): Response<ApiResponse<List<MarketplaceItem>>>
 
@@ -95,7 +125,7 @@ interface ChainTorqueApiService {
     @GET("api/marketplace/stats")
     suspend fun getMarketplaceStats(): Response<ApiResponse<Any>>
 
-    // User Endpoints
+    // User Endpoints - matches backend routes/user.js
     @GET("api/user/{address}/nfts")
     suspend fun getUserNFTs(@Path("address") address: String): Response<ApiResponse<List<UserNFT>>>
 
@@ -105,55 +135,14 @@ interface ChainTorqueApiService {
     @GET("api/user/{address}/sales")
     suspend fun getUserSales(@Path("address") address: String): Response<ApiResponse<List<MarketplaceItem>>>
 
-    @GET("api/user/{address}/profile")
-    suspend fun getUserProfile(@Path("address") address: String): Response<ApiResponse<UserProfile>>
+    @POST("api/user/register")
+    suspend fun registerUser(@Body request: Map<String, String>): Response<ApiResponse<UserProfile>>
 
-    // Purchase Endpoint
-    @POST("api/marketplace/purchase")
-    suspend fun purchaseNFT(@Body request: PurchaseRequest): Response<ApiResponse<PurchaseResponse>>
+    // Sync purchase after blockchain transaction
+    @POST("api/marketplace/sync-purchase")
+    suspend fun syncPurchase(@Body request: SyncPurchaseRequest): Response<ApiResponse<MarketplaceItem>>
 
     // Web3 Endpoints
     @GET("api/web3/status")
     suspend fun getWeb3Status(): Response<ApiResponse<Web3Status>>
-
-    @POST("api/web3/validate-address")
-    suspend fun validateAddress(@Body request: Map<String, String>): Response<ApiResponse<Map<String, Boolean>>>
-
-    @GET("api/web3/balance/{address}")
-    suspend fun getBalance(@Path("address") address: String): Response<ApiResponse<Map<String, String>>>
 }
-
-/*
-Usage Example in Repository:
-
-class MarketplaceRepository @Inject constructor(
-    private val apiService: ChainTorqueApiService
-) {
-    suspend fun getMarketplaceItems(): Result<List<MarketplaceItem>> {
-        return try {
-            val response = apiService.getMarketplaceItems()
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data ?: emptyList())
-            } else {
-                Result.failure(Exception(response.body()?.error ?: "Unknown error"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun purchaseItem(tokenId: Int, buyerAddress: String, price: Double): Result<String> {
-        return try {
-            val request = PurchaseRequest(tokenId, buyerAddress, price)
-            val response = apiService.purchaseNFT(request)
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(response.body()?.data?.transactionHash ?: "")
-            } else {
-                Result.failure(Exception(response.body()?.error ?: "Purchase failed"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-}
-*/

@@ -164,9 +164,9 @@ fun MarketplaceScreen(
                 onPurchase = { item ->
                     if (walletAddress != null) {
                         viewModel.purchaseItem(
-                            item.tokenId.toInt(),
+                            item.tokenId?.toIntOrNull() ?: 0,
                             walletAddress!!,
-                            item.price
+                            item.getDisplayPrice()
                         )
                         showItemDetail = false
                     } else {
@@ -336,7 +336,7 @@ private fun MarketplaceGrid(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(items, key = { it.tokenId }) { item ->
+        items(items, key = { it.tokenId ?: "" }) { item ->
             MarketplaceItemCard(
                 item = item,
                 onClick = { onItemClick(item) }
@@ -366,7 +366,7 @@ private fun MarketplaceItemCard(
                     .aspectRatio(1f)
                     .background(Color(0xFF374151))
             ) {
-                val imageUrl = item.images.firstOrNull() ?: ""
+                val imageUrl = item.getDisplayImage()
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = item.title,
@@ -394,7 +394,7 @@ private fun MarketplaceItemCard(
             // Content
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = item.title,
+                    text = item.title ?: "Untitled",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
@@ -410,7 +410,7 @@ private fun MarketplaceItemCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = item.seller.name,
+                        text = item.getShortSeller(),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.6f),
                         maxLines = 1
@@ -425,7 +425,7 @@ private fun MarketplaceItemCard(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = String.format("%.1f", item.seller.rating),
+                            text = "4.5",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.8f)
                         )
@@ -441,7 +441,7 @@ private fun MarketplaceItemCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${item.priceETH ?: item.price} ETH",
+                        text = "${item.getDisplayPrice()} ETH",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryColor
@@ -456,7 +456,7 @@ private fun MarketplaceItemCard(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = "${item.views}",
+                            text = "${item.views ?: 0}",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.5f)
                         )
@@ -495,7 +495,7 @@ private fun ItemDetailSheet(
                     .background(Color(0xFF374151))
             ) {
                 AsyncImage(
-                    model = item.images.firstOrNull() ?: "",
+                    model = item.getDisplayImage(),
                     contentDescription = item.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -506,7 +506,7 @@ private fun ItemDetailSheet(
 
             // Title
             Text(
-                text = item.title,
+                text = item.title ?: "Untitled",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -524,26 +524,19 @@ private fun ItemDetailSheet(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "by ${item.seller.name}",
+                    text = "by ${item.getShortSeller()}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.7f)
                 )
-                if (item.seller.verified) {
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        Icons.Filled.Verified,
-                        contentDescription = "Verified",
-                        tint = PrimaryColor,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
+                // Verified badge removed - seller is now just a wallet address
+
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Description
             Text(
-                text = item.description,
+                text = item.description ?: "No description available",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.8f)
             )
@@ -555,9 +548,9 @@ private fun ItemDetailSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(icon = Icons.Outlined.Visibility, value = "${item.views}", label = "Views")
-                StatItem(icon = Icons.Outlined.Favorite, value = "${item.likes}", label = "Likes")
-                StatItem(icon = Icons.Filled.Star, value = "${item.seller.rating}", label = "Rating")
+                StatItem(icon = Icons.Outlined.Visibility, value = "${item.views ?: 0}", label = "Views")
+                StatItem(icon = Icons.Outlined.Favorite, value = "${item.likes ?: 0}", label = "Likes")
+                StatItem(icon = Icons.Filled.Star, value = "4.5", label = "Rating")
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -575,7 +568,7 @@ private fun ItemDetailSheet(
                         color = Color.White.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = "${item.priceETH ?: item.price} ETH",
+                        text = "${item.getDisplayPrice()} ETH",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryColor
@@ -836,7 +829,7 @@ private fun NFTGrid(items: List<com.example.chaintorquenative.mobile.data.api.Us
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(items, key = { it.tokenId }) { nft ->
+        items(items, key = { it.tokenId ?: 0 }) { nft ->
             NFTCard(nft = nft)
         }
     }
@@ -851,8 +844,8 @@ private fun NFTCard(nft: com.example.chaintorquenative.mobile.data.api.UserNFT) 
     ) {
         Column {
             AsyncImage(
-                model = nft.image,
-                contentDescription = nft.title,
+                model = nft.getDisplayImage(),
+                contentDescription = nft.title ?: "NFT",
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f),
@@ -860,7 +853,7 @@ private fun NFTCard(nft: com.example.chaintorquenative.mobile.data.api.UserNFT) 
             )
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = nft.title,
+                    text = nft.title ?: "Untitled",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
@@ -868,7 +861,7 @@ private fun NFTCard(nft: com.example.chaintorquenative.mobile.data.api.UserNFT) 
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Token #${nft.tokenId}",
+                    text = "Token #${nft.tokenId ?: 0}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.6f)
                 )
@@ -885,7 +878,7 @@ private fun PurchasedItemsGrid(items: List<MarketplaceItem>) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(items, key = { it.tokenId }) { item ->
+        items(items, key = { it.tokenId ?: "" }) { item ->
             PurchasedItemCard(item = item)
         }
     }
@@ -901,7 +894,7 @@ private fun PurchasedItemCard(item: MarketplaceItem) {
         Column {
             Box {
                 AsyncImage(
-                    model = item.images.firstOrNull() ?: "",
+                    model = item.getDisplayImage(),
                     contentDescription = item.title,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -929,7 +922,7 @@ private fun PurchasedItemCard(item: MarketplaceItem) {
 
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = item.title,
+                    text = item.title ?: "Untitled",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
