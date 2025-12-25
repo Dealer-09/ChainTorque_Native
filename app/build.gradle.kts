@@ -91,6 +91,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended-android:1.6.8")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    
+    // Coil for image loading in Compose
+    implementation("io.coil-kt:coil-compose:2.5.0")
     }
 
 

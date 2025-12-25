@@ -21,6 +21,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "ChainTorque Native"
 include(":app")
-include(":chaintorque")
-
- 
