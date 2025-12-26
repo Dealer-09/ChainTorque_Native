@@ -1,6 +1,8 @@
 package com.example.chaintorquenative
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -23,7 +25,10 @@ import com.example.chaintorquenative.ui.screens.WalletScreen
 import com.example.chaintorquenative.ui.screens.SettingsScreen
 import com.example.chaintorquenative.ui.screens.AnimatedSplashScreen
 import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
+import com.reown.appkit.client.AppKit
 import dagger.hilt.android.AndroidEntryPoint
+
+private const val TAG = "MainActivity"
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -32,9 +37,40 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Handle deep link if app was launched from WalletConnect
+        handleIntent(intent)
+
         setContent {
             ChainTorqueTheme {
                 ChainTorqueAppWithSplash()
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Log.d(TAG, "onNewIntent received: ${intent.data}")
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        intent?.data?.let { uri ->
+            Log.d(TAG, "Deep link URI: $uri")
+
+            // Check if this is a WalletConnect callback
+            if (uri.scheme == "chaintorque" && uri.host == "walletconnect") {
+                Log.d(TAG, "WalletConnect callback received!")
+
+                // The AppKit SDK automatically handles the session approval
+                // via its internal relay connection. The deep link just brings
+                // the app back to the foreground.
+
+                // Log the URI for debugging
+                val wcUri = uri.getQueryParameter("uri")
+                if (wcUri != null) {
+                    Log.d(TAG, "WC URI in callback: $wcUri")
+                }
+                // No need to call handleDeepLink - relay handles session automatically
             }
         }
     }
@@ -48,7 +84,7 @@ enum class Screen {
 @Composable
 fun ChainTorqueAppWithSplash() {
     var showSplash by remember { mutableStateOf(true) }
-    
+
     if (showSplash) {
         AnimatedSplashScreen(
             onSplashComplete = {

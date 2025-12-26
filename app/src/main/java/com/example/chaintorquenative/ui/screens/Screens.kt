@@ -1030,6 +1030,11 @@ fun WalletScreen(
     val connectionStatus by viewModel.connectionStatus.observeAsState()
 
     var addressInput by remember { mutableStateOf("") }
+    var showWalletModal by remember { mutableStateOf(false) }
+
+    // BottomSheet state for AppKit modal
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -1105,7 +1110,90 @@ fun WalletScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 if (!isConnected) {
-                    // Connect Section
+                    // WalletConnect Button (Primary)
+                    Button(
+                        onClick = { showWalletModal = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF6851B)), // MetaMask orange
+                        enabled = !loading && !showWalletModal
+                    ) {
+                        if (loading || showWalletModal) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White
+                            )
+                        } else {
+                            Text("🦊", fontSize = 20.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Connect with MetaMask", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "or other WalletConnect wallets",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.5f)
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Network info
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBackground)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(SuccessColor)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Network",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    text = "Ethereum Sepolia Testnet",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Divider with "or"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Divider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f))
+                        Text(
+                            text = "  or enter manually  ",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.4f)
+                        )
+                        Divider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Manual address input (fallback)
                     OutlinedTextField(
                         value = addressInput,
                         onValueChange = { addressInput = it },
@@ -1132,9 +1220,9 @@ fun WalletScreen(
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Button(
+                    OutlinedButton(
                         onClick = {
                             if (addressInput.isNotEmpty()) {
                                 viewModel.connectWallet(addressInput)
@@ -1142,32 +1230,12 @@ fun WalletScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
-                        enabled = !loading && addressInput.isNotEmpty()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = addressInput.isNotEmpty()
                     ) {
-                        if (loading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = Color.White
-                            )
-                        } else {
-                            Icon(Icons.Filled.Link, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Connect Wallet", fontWeight = FontWeight.SemiBold)
-                        }
+                        Text("Connect Address", color = PrimaryColor)
                     }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Info text
-                    Text(
-                        text = "Enter your Ethereum wallet address to connect. This address will be used for all marketplace transactions.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.5f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
                 } else {
                     // Connected Section
                     Card(
@@ -1240,6 +1308,107 @@ fun WalletScreen(
                         Text("Disconnect Wallet", fontWeight = FontWeight.SemiBold)
                     }
                 }
+            }
+        }
+    }
+
+    // AppKit Wallet Modal Bottom Sheet
+    if (showWalletModal) {
+        ModalBottomSheet(
+            onDismissRequest = { showWalletModal = false },
+            sheetState = sheetState,
+            containerColor = CardBackground
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Connect Wallet",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Scan the QR code with MetaMask or your preferred wallet app",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.7f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // MetaMask option
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            viewModel.connectWallet()
+                            showWalletModal = false
+                        },
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF21262D))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🦊", fontSize = 28.sp)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text("MetaMask", fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text("Popular", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.5f))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // WalletConnect option
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            viewModel.connectWallet()
+                            showWalletModal = false
+                        },
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF21262D))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🔗", fontSize = 28.sp)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text("WalletConnect", fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text("Scan QR Code", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.5f))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                OutlinedButton(
+                    onClick = { showWalletModal = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel", color = Color.White)
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

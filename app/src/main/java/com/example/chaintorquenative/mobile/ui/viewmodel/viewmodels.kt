@@ -10,6 +10,8 @@ import com.example.chaintorquenative.mobile.data.repository.Web3Repository
 import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
 import com.example.chaintorquenative.mobile.data.api.UserNFT
 import com.example.chaintorquenative.mobile.data.api.UserProfile
+import com.example.chaintorquenative.wallet.WalletConnectManager
+import com.example.chaintorquenative.wallet.WalletConnectionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -101,17 +103,14 @@ class MarketplaceViewModel @Inject constructor(
         }
     }
 
-    // Note: Actual NFT purchase requires WalletConnect for signing transactions
-    // This method prepares the purchase and would sync after blockchain confirmation
     fun purchaseItem(tokenId: Int, buyerAddress: String, price: Double) {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             _purchaseSuccess.value = null
 
-            // TODO: Integrate WalletConnect here for actual on-chain purchase
-            // For now, just show a message that WalletConnect is needed
-            _error.value = "WalletConnect integration needed for purchases"
+            // TODO: Use WalletConnectManager for actual on-chain purchase
+            _error.value = "Connect wallet to purchase"
 
             _loading.value = false
         }
@@ -163,18 +162,13 @@ class UserProfileViewModel @Inject constructor(
             _loading.value = true
             _error.value = null
 
-            // Register/get user profile
             userRepository.registerUser(address)
                 .onSuccess { profile ->
                     _userProfile.value = profile
                 }
-                .onFailure { exception ->
-                    // Profile failure is not critical
-                }
+                .onFailure { }
 
-            // Load user NFTs
             loadUserNFTs(address)
-
             _loading.value = false
         }
     }
@@ -194,7 +188,6 @@ class UserProfileViewModel @Inject constructor(
     fun loadUserPurchases(address: String) {
         viewModelScope.launch {
             _loading.value = true
-
             userRepository.getUserPurchases(address)
                 .onSuccess { purchases ->
                     _userPurchases.value = purchases
@@ -202,7 +195,6 @@ class UserProfileViewModel @Inject constructor(
                 .onFailure { exception ->
                     _error.value = exception.message
                 }
-
             _loading.value = false
         }
     }
@@ -210,7 +202,6 @@ class UserProfileViewModel @Inject constructor(
     fun loadUserSales(address: String) {
         viewModelScope.launch {
             _loading.value = true
-
             userRepository.getUserSales(address)
                 .onSuccess { sales ->
                     _userSales.value = sales
@@ -218,7 +209,6 @@ class UserProfileViewModel @Inject constructor(
                 .onFailure { exception ->
                     _error.value = exception.message
                 }
-
             _loading.value = false
         }
     }
@@ -234,7 +224,8 @@ class UserProfileViewModel @Inject constructor(
 
 @HiltViewModel
 class WalletViewModel @Inject constructor(
-    private val web3Repository: Web3Repository
+    private val web3Repository: Web3Repository,
+    private val walletConnectManager: WalletConnectManager
 ) : ViewModel() {
 
     enum class ConnectionStatus { DISCONNECTED, CONNECTING, CONNECTED, ERROR }
@@ -256,19 +247,66 @@ class WalletViewModel @Inject constructor(
 
     private val _connectionStatus = MutableLiveData<ConnectionStatus>(ConnectionStatus.DISCONNECTED)
     val connectionStatus: LiveData<ConnectionStatus> = _connectionStatus
+    
+    private val _chainName = MutableLiveData<String>("Sepolia")
+    val chainName: LiveData<String> = _chainName
 
+    init {
+        // Observe WalletConnect state changes
+        viewModelScope.launch {
+            walletConnectManager.connectionState.collect { state ->
+                when (state) {
+                    is WalletConnectionState.Disconnected -> {
+                        _connectionStatus.value = ConnectionStatus.DISCONNECTED
+                        _isConnected.value = false
+                        _walletAddress.value = null
+                        _balance.value = ""
+                    }
+                    is WalletConnectionState.Connecting -> {
+                        _connectionStatus.value = ConnectionStatus.CONNECTING
+                        _loading.value = true
+                    }
+                    is WalletConnectionState.Connected -> {
+                        _connectionStatus.value = ConnectionStatus.CONNECTED
+                        _isConnected.value = true
+                        _walletAddress.value = state.address
+                        _balance.value = state.balance
+                        _loading.value = false
+                        _chainName.value = if (state.chainId.contains("11155111")) "Sepolia" else "Unknown"
+                    }
+                    is WalletConnectionState.Error -> {
+                        _connectionStatus.value = ConnectionStatus.ERROR
+                        _error.value = state.message
+                        _loading.value = false
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Connect wallet using WalletConnect - opens AppKit modal
+     */
+    fun connectWallet() {
+        _loading.value = true
+        _connectionStatus.value = ConnectionStatus.CONNECTING
+        _error.value = null
+        walletConnectManager.connect()
+    }
+    
+    /**
+     * Legacy method for manual address input (fallback)
+     */
     fun connectWallet(address: String) {
         viewModelScope.launch {
             _loading.value = true
             _connectionStatus.value = ConnectionStatus.CONNECTING
             _error.value = null
 
-            // Validate address format (client-side)
             if (web3Repository.isValidEthereumAddress(address)) {
                 _walletAddress.value = address
                 _isConnected.value = true
                 _connectionStatus.value = ConnectionStatus.CONNECTED
-                // Note: Balance would be fetched from blockchain, for now just set placeholder
                 _balance.value = "0.0"
             } else {
                 _error.value = "Invalid wallet address format"
@@ -280,6 +318,7 @@ class WalletViewModel @Inject constructor(
     }
 
     fun disconnectWallet() {
+        walletConnectManager.disconnect()
         _walletAddress.value = null
         _isConnected.value = false
         _balance.value = ""
@@ -288,24 +327,14 @@ class WalletViewModel @Inject constructor(
     }
 
     fun loadBalance() {
-        val address = _walletAddress.value ?: return
-
-        viewModelScope.launch {
-            // Note: Would integrate with WalletConnect/Web3 to get real balance
-            // For now just use placeholder
-            _balance.value = "0.0"
-        }
+        // Balance updated via WalletConnect state
     }
 
     fun checkWeb3Status() {
         viewModelScope.launch {
             web3Repository.getWeb3Status()
-                .onSuccess {
-                    // Web3 is available
-                }
-                .onFailure {
-                    // Web3 not available
-                }
+                .onSuccess { }
+                .onFailure { }
         }
     }
 
