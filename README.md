@@ -7,7 +7,7 @@ A native Android application for browsing, purchasing, and managing NFT-based CA
 ## Features
 
 - **NFT Marketplace** - Browse and purchase premium 3D CAD assets
-- **WalletConnect Integration** - Connect MetaMask and other wallets via Reown AppKit
+- **MetaMask SDK Integration** - Connect directly with MetaMask Android App
 - **User Profiles** - View owned NFTs, purchase history, and sales
 - **Sepolia Testnet** - Built for Ethereum Sepolia testnet transactions
 
@@ -18,8 +18,9 @@ A native Android application for browsing, purchasing, and managing NFT-based CA
 | UI | Jetpack Compose, Material 3 |
 | Architecture | MVVM, Hilt DI |
 | Networking | Retrofit, OkHttp |
-| Wallet | Reown AppKit (WalletConnect v2) |
+| Wallet | MetaMask Android SDK (v0.5.1) |
 | State | StateFlow, LiveData |
+| Blockchain | Native `eth_sendTransaction` |
 
 ## Project Structure
 
@@ -36,7 +37,7 @@ app/src/main/java/com/example/chaintorquenative/
 │   ├── components/        # Reusable UI components
 │   ├── screens/           # Compose screens
 │   └── theme/             # App theming
-├── wallet/                # WalletConnect integration
+├── wallet/                # MetaMask SDK integration
 ├── ChainTorqueApplication.kt
 └── MainActivity.kt
 ```
@@ -45,13 +46,12 @@ app/src/main/java/com/example/chaintorquenative/
 
 ### Prerequisites
 - Android Studio Ladybug or later
-- JDK 11+
+- JDK 17+
 - Android SDK 33+
 
-### WalletConnect Configuration
-1. Get a Project ID from [Reown Dashboard](https://cloud.reown.com/)
-2. Add your package name: `com.example.chaintorquenative`
-3. Update `WalletConnectConfig.PROJECT_ID` in `wallet/WalletConnectManager.kt`
+### Configuration
+1. No API keys needed for MetaMask SDK default integration
+2. Uses standard `io.metamask.androidsdk` dependency
 
 ### Build
 ```bash
@@ -68,10 +68,12 @@ The app connects to a backend server for:
 
 ## Testing
 
-1. Install MetaMask on your Android device
-2. Switch to Sepolia testnet in MetaMask
+1. Install **MetaMask** on your Android device/emulator
+2. Create/Import a wallet and switch to **Sepolia Testnet**
 3. Get test ETH from a [Sepolia faucet](https://sepoliafaucet.com/)
-4. Connect wallet in the app
+4. Open ChainTorque, go to **Wallet** tab, and tap "Connect with MetaMask"
+5. Approve the connection in the MetaMask app
+6. To buy: Select an item, tap "Buy Now", and sign the transaction in MetaMask
 
 ## License
 
