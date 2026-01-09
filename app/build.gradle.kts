@@ -94,8 +94,6 @@ dependencies {
     // Coil for image loading in Compose
     implementation("io.coil-kt:coil-compose:2.5.0")
     
-    // WalletConnect / Reown AppKit for Web3 Wallet Integration
-    implementation(platform("com.reown:android-bom:1.3.3"))
-    implementation("com.reown:appkit")
-    implementation("com.reown:android-core")
+    // MetaMask SDK regarding Native Integration
+    implementation("io.metamask.androidsdk:metamask-android-sdk:0.5.1")
 }

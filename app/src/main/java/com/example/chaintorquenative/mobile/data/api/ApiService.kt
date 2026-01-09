@@ -37,7 +37,8 @@ data class MarketplaceItem(
     val blockchain: String? = null,
     val format: String? = null,
     val status: String? = null,
-    val transactionHash: String? = null
+    val transactionHash: String? = null,
+    val username: String? = null // Added to match backend
 ) {
     // Helper to get first image URL
     fun getDisplayImage(): String {
@@ -49,9 +50,9 @@ data class MarketplaceItem(
         return priceETH ?: price ?: 0.0
     }
 
-    // SECURITY: Don't show wallet address - just show "Creator"
+    // Show Username if available, otherwise "Creator"
     fun getShortSeller(): String {
-        return "Creator"
+        return username ?: "Creator"
     }
 }
 

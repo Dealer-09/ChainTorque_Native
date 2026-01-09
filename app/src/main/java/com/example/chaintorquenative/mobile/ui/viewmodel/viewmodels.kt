@@ -10,7 +10,7 @@ import com.example.chaintorquenative.mobile.data.repository.Web3Repository
 import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
 import com.example.chaintorquenative.mobile.data.api.UserNFT
 import com.example.chaintorquenative.mobile.data.api.UserProfile
-import com.example.chaintorquenative.wallet.WalletConnectManager
+import com.example.chaintorquenative.wallet.MetaMaskManager
 import com.example.chaintorquenative.wallet.WalletConnectionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -19,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MarketplaceViewModel @Inject constructor(
     private val marketplaceRepository: MarketplaceRepository,
-    private val web3Repository: Web3Repository
+    private val web3Repository: Web3Repository,
+    private val metaMaskManager: MetaMaskManager
 ) : ViewModel() {
 
     private val _marketplaceItems = MutableLiveData<List<MarketplaceItem>>()
@@ -111,14 +112,38 @@ class MarketplaceViewModel @Inject constructor(
 
             android.util.Log.d("MarketplaceViewModel", "purchaseItem called - tokenId: $tokenId, buyer: $buyerAddress, price: $price ETH")
             
-            // TODO: Implement actual on-chain purchase via WalletConnect
-            // This requires:
-            // 1. Building the transaction to call the smart contract's purchase function
-            // 2. Sending the transaction through WalletConnect for signing
-            // 3. Waiting for confirmation and updating the backend
-            _error.value = "Blockchain purchase coming soon! The wallet is connected, but on-chain transactions require MetaMask signing which is in development."
+            // 1. Prepare Data for purchaseToken(uint256)
+            // Selector: 0xc2db2c42
+            val functionSelector = "0xc2db2c42"
+            val paddedTokenId = "%064x".format(tokenId)
+            val data = functionSelector + paddedTokenId
+            
+            // 2. Prepare Value (Price to Wei Hex)
+            val priceWei = java.math.BigDecimal(price)
+                .multiply(java.math.BigDecimal.TEN.pow(18))
+                .toBigInteger()
+            val valueHex = "0x" + priceWei.toString(16)
+            
+            // Contract Address (Fresh Start v2)
+            val contractAddress = "0x38Ada2D66de5A9d0aF3734E96aC11E6B2366BfF4"
 
-            _loading.value = false
+            // 3. Send Transaction
+            metaMaskManager.sendTransaction(
+                fromAddress = buyerAddress,
+                toAddress = contractAddress,
+                data = data,
+                value = valueHex,
+                onSuccess = { txHash ->
+                     _purchaseSuccess.value = txHash
+                     _loading.value = false
+                     android.util.Log.d("MarketplaceViewModel", "Purchase successful: $txHash")
+                },
+                onError = { errorMsg ->
+                    _error.value = "Purchase failed: $errorMsg"
+                    _loading.value = false
+                    android.util.Log.e("MarketplaceViewModel", "Purchase error: $errorMsg")
+                }
+            )
         }
     }
 
@@ -237,7 +262,7 @@ class UserProfileViewModel @Inject constructor(
 @HiltViewModel
 class WalletViewModel @Inject constructor(
     private val web3Repository: Web3Repository,
-    private val walletConnectManager: WalletConnectManager
+    private val metaMaskManager: MetaMaskManager
 ) : ViewModel() {
 
     enum class ConnectionStatus { DISCONNECTED, CONNECTING, CONNECTED, ERROR }
@@ -264,9 +289,9 @@ class WalletViewModel @Inject constructor(
     val chainName: LiveData<String> = _chainName
 
     init {
-        // Observe WalletConnect state changes
+        // Observe MetaMask state changes
         viewModelScope.launch {
-            walletConnectManager.connectionState.collect { state ->
+            metaMaskManager.connectionState.collect { state ->
                 when (state) {
                     is WalletConnectionState.Disconnected -> {
                         _connectionStatus.value = ConnectionStatus.DISCONNECTED
@@ -297,13 +322,13 @@ class WalletViewModel @Inject constructor(
     }
 
     /**
-     * Connect wallet using WalletConnect - opens AppKit modal
+     * Connect wallet using MetaMask SDK
      */
     fun connectWallet() {
         _loading.value = true
         _connectionStatus.value = ConnectionStatus.CONNECTING
         _error.value = null
-        walletConnectManager.connect()
+        metaMaskManager.connect()
     }
     
     /**
@@ -334,7 +359,7 @@ class WalletViewModel @Inject constructor(
     }
 
     fun disconnectWallet() {
-        walletConnectManager.disconnect()
+        metaMaskManager.disconnect()
         _walletAddress.value = null
         _isConnected.value = false
         _balance.value = ""

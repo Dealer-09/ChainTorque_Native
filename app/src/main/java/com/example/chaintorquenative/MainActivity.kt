@@ -27,7 +27,7 @@ import com.example.chaintorquenative.ui.screens.WalletScreen
 import com.example.chaintorquenative.ui.screens.SettingsScreen
 import com.example.chaintorquenative.ui.screens.AnimatedSplashScreen
 import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
-import com.example.chaintorquenative.wallet.WalletConnectManager
+import com.example.chaintorquenative.wallet.MetaMaskManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -37,57 +37,18 @@ private const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
 
     @Inject
-    lateinit var walletConnectManager: WalletConnectManager
+    lateinit var metaMaskManager: MetaMaskManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        // Handle deep link if app was launched from WalletConnect
-        handleIntent(intent)
+        
+        // Initialize MetaMask SDK
+        metaMaskManager.initialize(this)
 
         setContent {
             ChainTorqueTheme {
                 ChainTorqueAppWithSplash()
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d(TAG, "onResume - checking for active session...")
-        
-        // Check if there's an active session that we might have missed
-        // This handles the case where session was approved while app was in background
-        walletConnectManager.checkExistingSession()
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        Log.d(TAG, "onNewIntent received: ${intent.data}")
-        handleIntent(intent)
-    }
-
-    private fun handleIntent(intent: Intent?) {
-        intent?.data?.let { uri ->
-            Log.d(TAG, "Deep link URI: $uri")
-
-            // Check if this is a WalletConnect callback
-            if (uri.scheme == "chaintorque" && uri.host == "walletconnect") {
-                Log.d(TAG, "WalletConnect callback received!")
-
-                // The AppKit SDK automatically handles the session approval
-                // via its internal relay connection. The deep link just brings
-                // the app back to the foreground.
-
-                // Log the URI for debugging
-                val wcUri = uri.getQueryParameter("uri")
-                if (wcUri != null) {
-                    Log.d(TAG, "WC URI in callback: $wcUri")
-                }
-                
-                // Check for session when we receive the callback
-                walletConnectManager.checkExistingSession()
             }
         }
     }
