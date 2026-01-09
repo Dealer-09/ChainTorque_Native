@@ -15,9 +15,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.chaintorquenative.mobile.ui.viewmodels.WalletViewModel
 import com.example.chaintorquenative.ui.components.BottomNavigationBar
 import com.example.chaintorquenative.ui.screens.MarketplaceScreen
 import com.example.chaintorquenative.ui.screens.ProfileScreen
@@ -25,13 +27,17 @@ import com.example.chaintorquenative.ui.screens.WalletScreen
 import com.example.chaintorquenative.ui.screens.SettingsScreen
 import com.example.chaintorquenative.ui.screens.AnimatedSplashScreen
 import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
-import com.reown.appkit.client.AppKit
+import com.example.chaintorquenative.wallet.WalletConnectManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 private const val TAG = "MainActivity"
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var walletConnectManager: WalletConnectManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +51,15 @@ class MainActivity : ComponentActivity() {
                 ChainTorqueAppWithSplash()
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume - checking for active session...")
+        
+        // Check if there's an active session that we might have missed
+        // This handles the case where session was approved while app was in background
+        walletConnectManager.checkExistingSession()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -70,7 +85,9 @@ class MainActivity : ComponentActivity() {
                 if (wcUri != null) {
                     Log.d(TAG, "WC URI in callback: $wcUri")
                 }
-                // No need to call handleDeepLink - relay handles session automatically
+                
+                // Check for session when we receive the callback
+                walletConnectManager.checkExistingSession()
             }
         }
     }
@@ -100,6 +117,10 @@ fun ChainTorqueAppWithSplash() {
 fun ChainTorqueApp() {
     val navController = rememberNavController()
     var currentScreen by remember { mutableStateOf(Screen.MARKETPLACE) }
+    
+    // Create a SHARED WalletViewModel at the app level
+    // This ensures all screens see the same wallet state!
+    val sharedWalletViewModel: WalletViewModel = hiltViewModel()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -135,7 +156,8 @@ fun ChainTorqueApp() {
                     onNavigateToWallet = {
                         currentScreen = Screen.WALLET
                         navController.navigate("wallet")
-                    }
+                    },
+                    walletViewModel = sharedWalletViewModel
                 )
             }
             composable("profile") {
@@ -143,11 +165,12 @@ fun ChainTorqueApp() {
                     onNavigateToWallet = {
                         currentScreen = Screen.WALLET
                         navController.navigate("wallet")
-                    }
+                    },
+                    walletViewModel = sharedWalletViewModel
                 )
             }
             composable("wallet") {
-                WalletScreen()
+                WalletScreen(viewModel = sharedWalletViewModel)
             }
             composable("settings") {
                 SettingsScreen()

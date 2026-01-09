@@ -109,8 +109,14 @@ class MarketplaceViewModel @Inject constructor(
             _error.value = null
             _purchaseSuccess.value = null
 
-            // TODO: Use WalletConnectManager for actual on-chain purchase
-            _error.value = "Connect wallet to purchase"
+            android.util.Log.d("MarketplaceViewModel", "purchaseItem called - tokenId: $tokenId, buyer: $buyerAddress, price: $price ETH")
+            
+            // TODO: Implement actual on-chain purchase via WalletConnect
+            // This requires:
+            // 1. Building the transaction to call the smart contract's purchase function
+            // 2. Sending the transaction through WalletConnect for signing
+            // 3. Waiting for confirmation and updating the backend
+            _error.value = "Blockchain purchase coming soon! The wallet is connected, but on-chain transactions require MetaMask signing which is in development."
 
             _loading.value = false
         }
@@ -158,15 +164,19 @@ class UserProfileViewModel @Inject constructor(
     val currentTab: LiveData<ProfileTab> = _currentTab
 
     fun loadUserData(address: String) {
+        android.util.Log.d("UserProfileViewModel", "loadUserData called with address: $address")
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
 
             userRepository.registerUser(address)
                 .onSuccess { profile ->
+                    android.util.Log.d("UserProfileViewModel", "User registered: ${profile.walletAddress}")
                     _userProfile.value = profile
                 }
-                .onFailure { }
+                .onFailure { 
+                    android.util.Log.e("UserProfileViewModel", "Register user failed: ${it.message}")
+                }
 
             loadUserNFTs(address)
             _loading.value = false
@@ -174,9 +184,11 @@ class UserProfileViewModel @Inject constructor(
     }
 
     fun loadUserNFTs(address: String) {
+        android.util.Log.d("UserProfileViewModel", "loadUserNFTs called with address: $address")
         viewModelScope.launch {
             userRepository.getUserNFTs(address)
                 .onSuccess { nfts ->
+                    android.util.Log.d("UserProfileViewModel", "Got ${nfts.size} NFTs for $address")
                     _userNFTs.value = nfts
                 }
                 .onFailure { exception ->
@@ -298,17 +310,21 @@ class WalletViewModel @Inject constructor(
      * Legacy method for manual address input (fallback)
      */
     fun connectWallet(address: String) {
+        android.util.Log.d("WalletViewModel", "Manual connectWallet called with address: $address")
         viewModelScope.launch {
             _loading.value = true
             _connectionStatus.value = ConnectionStatus.CONNECTING
             _error.value = null
 
             if (web3Repository.isValidEthereumAddress(address)) {
+                android.util.Log.d("WalletViewModel", "Address is valid! Setting wallet address...")
                 _walletAddress.value = address
                 _isConnected.value = true
                 _connectionStatus.value = ConnectionStatus.CONNECTED
                 _balance.value = "0.0"
+                android.util.Log.d("WalletViewModel", "Wallet connected manually. Address: ${_walletAddress.value}")
             } else {
+                android.util.Log.e("WalletViewModel", "Invalid address format: $address")
                 _error.value = "Invalid wallet address format"
                 _connectionStatus.value = ConnectionStatus.ERROR
             }
@@ -324,18 +340,6 @@ class WalletViewModel @Inject constructor(
         _balance.value = ""
         _connectionStatus.value = ConnectionStatus.DISCONNECTED
         _error.value = null
-    }
-
-    fun loadBalance() {
-        // Balance updated via WalletConnect state
-    }
-
-    fun checkWeb3Status() {
-        viewModelScope.launch {
-            web3Repository.getWeb3Status()
-                .onSuccess { }
-                .onFailure { }
-        }
     }
 
     fun clearError() {

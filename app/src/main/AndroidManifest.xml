@@ -4,6 +4,27 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Required for Android 11+ to detect and communicate with wallet apps -->
+    <queries>
+        <!-- MetaMask -->
+        <package android:name="io.metamask" />
+        <!-- Trust Wallet -->
+        <package android:name="com.wallet.crypto.trustapp" />
+        <!-- Rainbow -->
+        <package android:name="me.rainbow" />
+        <!-- Coinbase Wallet -->
+        <package android:name="org.toshi" />
+        <!-- Generic WalletConnect URI support -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="wc" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="metamask" />
+        </intent>
+    </queries>
+
     <application
         android:name=".ChainTorqueApplication"
         android:allowBackup="true"

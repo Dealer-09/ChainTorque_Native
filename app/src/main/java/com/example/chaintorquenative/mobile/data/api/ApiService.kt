@@ -49,10 +49,9 @@ data class MarketplaceItem(
         return priceETH ?: price ?: 0.0
     }
 
-    // Helper to get short seller address
+    // SECURITY: Don't show wallet address - just show "Creator"
     fun getShortSeller(): String {
-        val addr = seller ?: owner ?: ""
-        return if (addr.length > 10) "${addr.take(6)}...${addr.takeLast(4)}" else addr
+        return "Creator"
     }
 }
 

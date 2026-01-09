@@ -79,6 +79,9 @@ fun MarketplaceScreen(
     val searchQuery by viewModel.searchQuery.observeAsState("")
     val walletAddress by walletViewModel.walletAddress.observeAsState()
     val selectedItem by viewModel.selectedItem.observeAsState()
+    
+    // Debug: Log the wallet address to verify shared ViewModel
+    android.util.Log.d("MarketplaceScreen", "walletAddress = $walletAddress, isConnected = ${walletAddress != null}")
 
     var selectedCategory by remember { mutableStateOf("All") }
     var showItemDetail by remember { mutableStateOf(false) }
@@ -653,7 +656,9 @@ fun ProfileScreen(
     val currentTab by viewModel.currentTab.observeAsState(UserProfileViewModel.ProfileTab.OWNED)
 
     LaunchedEffect(walletAddress) {
+        android.util.Log.d("ProfileScreen", "LaunchedEffect triggered. walletAddress = $walletAddress")
         walletAddress?.let { address ->
+            android.util.Log.d("ProfileScreen", "Calling loadUserData for address: $address")
             viewModel.loadUserData(address)
         }
     }
@@ -1277,16 +1282,6 @@ fun WalletScreen(
                                         style = MaterialTheme.typography.headlineSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = SuccessColor
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = { viewModel.loadBalance() }
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Refresh,
-                                        contentDescription = "Refresh",
-                                        tint = PrimaryColor
                                     )
                                 }
                             }

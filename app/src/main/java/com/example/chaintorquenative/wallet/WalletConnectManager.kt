@@ -2,8 +2,6 @@ package com.example.chaintorquenative.wallet
 
 import android.app.Application
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import com.reown.android.Core
 import com.reown.android.CoreClient
@@ -68,7 +66,6 @@ class WalletConnectManager @Inject constructor() {
         Log.d(TAG, "Starting WalletConnect initialization...")
 
         try {
-            val connectionType = ConnectionType.AUTOMATIC
             val projectId = WalletConnectConfig.PROJECT_ID
             Log.d(TAG, "Using Project ID: $projectId")
 
@@ -84,11 +81,11 @@ class WalletConnectManager @Inject constructor() {
             // Initialize CoreClient
             CoreClient.initialize(
                 projectId = projectId,
-                connectionType = connectionType,
+                connectionType = ConnectionType.AUTOMATIC,
                 application = application,
                 metaData = appMetaData
             ) { error ->
-                Log.e(TAG, "CoreClient initialization error: ${error.throwable.message}", error.throwable)
+                Log.e(TAG, "CoreClient error: ${error.throwable.message}", error.throwable)
                 _connectionState.value = WalletConnectionState.Error(
                     error.throwable.message ?: "Core initialization failed"
                 )
@@ -101,12 +98,24 @@ class WalletConnectManager @Inject constructor() {
                 init = Modal.Params.Init(CoreClient),
                 onSuccess = {
                     Log.d(TAG, "AppKit initialized successfully!")
+
+                    // Use preset chains from SDK - Sepolia is eip155:11155111
+                    // Import: com.reown.appkit.presets.AppKitChainsPresets
+                    try {
+                        // Try using preset chains first
+                        val chains = com.reown.appkit.presets.AppKitChainsPresets.ethChains.values.toList()
+                        AppKit.setChains(chains)
+                        Log.d(TAG, "Chains configured from presets: ${chains.size} chains")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Preset chains not available, skipping setChains: ${e.message}")
+                    }
+
                     isInitialized = true
                     setupDelegate()
                     checkExistingSession()
                 },
                 onError = { error ->
-                    Log.e(TAG, "AppKit initialization error: ${error.throwable.message}", error.throwable)
+                    Log.e(TAG, "AppKit error: ${error.throwable.message}", error.throwable)
                     _connectionState.value = WalletConnectionState.Error(
                         error.throwable.message ?: "AppKit initialization failed"
                     )
@@ -124,7 +133,7 @@ class WalletConnectManager @Inject constructor() {
     /**
      * Check for existing session on app start
      */
-    private fun checkExistingSession() {
+    fun checkExistingSession() {
         try {
             val account = AppKit.getAccount()
             if (account != null) {
@@ -213,7 +222,7 @@ class WalletConnectManager @Inject constructor() {
     }
 
     /**
-     * Open wallet connection - creates pairing and launches wallet
+     * Open wallet connection - uses manual pairing with SDK 1.3.3
      */
     fun connect() {
         Log.d(TAG, "connect() called, isInitialized=$isInitialized")
@@ -227,56 +236,71 @@ class WalletConnectManager @Inject constructor() {
         _connectionState.value = WalletConnectionState.Connecting
 
         try {
-            Log.d(TAG, "Creating pairing...")
+            Log.d(TAG, "Starting connection...")
 
-            // Create a new pairing and get the URI
+            // Create a pairing first
             val pairing = CoreClient.Pairing.create { error ->
                 Log.e(TAG, "Pairing creation error: ${error.throwable.message}", error.throwable)
-                _connectionState.value = WalletConnectionState.Error(
-                    error.throwable.message ?: "Failed to create pairing"
-                )
             }
 
-            if (pairing != null) {
-                val pairingUri = pairing.uri
-                Log.d(TAG, "Pairing created with URI: $pairingUri")
-
-                // Connect using the pairing
-                Log.d(TAG, "Calling AppKit.connect()...")
-                AppKit.connect(
-                    connect = Modal.Params.Connect(
-                        namespaces = mapOf(
-                            "eip155" to Modal.Model.Namespace.Proposal(
-                                chains = listOf("eip155:11155111"), // Sepolia
-                                methods = listOf(
-                                    "eth_sendTransaction",
-                                    "eth_signTransaction",
-                                    "eth_sign",
-                                    "personal_sign",
-                                    "eth_signTypedData"
-                                ),
-                                events = listOf("chainChanged", "accountsChanged")
-                            )
-                        ),
-                        optionalNamespaces = null,
-                        properties = null,
-                        pairing = pairing
-                    ),
-                    onSuccess = {
-                        Log.d(TAG, "AppKit.connect() onSuccess - launching wallet...")
-                        launchWalletWithUri(pairingUri)
-                    },
-                    onError = { error ->
-                        Log.e(TAG, "AppKit.connect() error: ${error.throwable.message}", error.throwable)
-                        _connectionState.value = WalletConnectionState.Error(
-                            error.throwable.message ?: "Connection failed"
-                        )
-                    }
-                )
-            } else {
-                Log.e(TAG, "Pairing is null!")
+            if (pairing == null) {
+                Log.e(TAG, "Failed to create pairing")
                 _connectionState.value = WalletConnectionState.Error("Failed to create connection")
+                return
             }
+
+            Log.d(TAG, "Pairing created: ${pairing.uri}")
+
+            // SDK 1.3.3 uses AppKit.connect() with namespace params and pairing
+            // Use optional namespaces to allow any chain - don't force Sepolia
+            val requiredNamespaces = mapOf(
+                "eip155" to Modal.Model.Namespace.Proposal(
+                    chains = listOf("eip155:1"), // Ethereum Mainnet as minimum requirement
+                    methods = listOf(
+                        "eth_sendTransaction",
+                        "eth_signTransaction",
+                        "eth_sign",
+                        "personal_sign",
+                        "eth_signTypedData"
+                    ),
+                    events = listOf("chainChanged", "accountsChanged")
+                )
+            )
+            
+            val optionalNamespaces = mapOf(
+                "eip155" to Modal.Model.Namespace.Proposal(
+                    chains = listOf("eip155:11155111", "eip155:1", "eip155:137", "eip155:42161"), // Sepolia, Mainnet, Polygon, Arbitrum
+                    methods = listOf(
+                        "eth_sendTransaction",
+                        "eth_signTransaction",
+                        "eth_sign",
+                        "personal_sign",
+                        "eth_signTypedData",
+                        "wallet_switchEthereumChain"
+                    ),
+                    events = listOf("chainChanged", "accountsChanged")
+                )
+            )
+
+            AppKit.connect(
+                connect = Modal.Params.Connect(
+                    namespaces = requiredNamespaces,
+                    optionalNamespaces = optionalNamespaces,
+                    properties = null,
+                    pairing = pairing
+                ),
+                onSuccess = {
+                    Log.d(TAG, "Connection initiated successfully")
+                    // Launch wallet app with the pairing URI
+                    launchWalletWithUri(pairing.uri)
+                },
+                onError = { error ->
+                    Log.e(TAG, "Connection error: ${error.throwable.message}", error.throwable)
+                    _connectionState.value = WalletConnectionState.Error(
+                        error.throwable.message ?: "Connection failed"
+                    )
+                }
+            )
         } catch (e: Exception) {
             Log.e(TAG, "connect() exception: ${e.message}", e)
             _connectionState.value = WalletConnectionState.Error(
@@ -300,11 +324,11 @@ class WalletConnectManager @Inject constructor() {
             }
 
             // Try to launch MetaMask directly
-            val metamaskUri = "metamask://wc?uri=${Uri.encode(pairingUri)}"
+            val metamaskUri = "metamask://wc?uri=${android.net.Uri.encode(pairingUri)}"
             Log.d(TAG, "Launching MetaMask with URI: $metamaskUri")
 
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(metamaskUri))
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(metamaskUri))
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
 
             try {
                 context.startActivity(intent)
@@ -316,8 +340,8 @@ class WalletConnectManager @Inject constructor() {
                 val wcUri = "wc:${pairingUri.removePrefix("wc:")}"
                 Log.d(TAG, "Trying WC URI: $wcUri")
 
-                val wcIntent = Intent(Intent.ACTION_VIEW, Uri.parse(wcUri))
-                wcIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                val wcIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(wcUri))
+                wcIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
 
                 try {
                     context.startActivity(wcIntent)
