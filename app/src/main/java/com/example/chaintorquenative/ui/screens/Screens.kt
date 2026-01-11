@@ -650,10 +650,8 @@ fun ProfileScreen(
     val walletAddress by walletViewModel.walletAddress.observeAsState()
     val isConnected by walletViewModel.isConnected.observeAsState(false)
     val balance by walletViewModel.balance.observeAsState("")
-    val userNFTs by viewModel.userNFTs.observeAsState(emptyList())
     val userPurchases by viewModel.userPurchases.observeAsState(emptyList())
     val loading by viewModel.loading.observeAsState(false)
-    val currentTab by viewModel.currentTab.observeAsState(UserProfileViewModel.ProfileTab.OWNED)
 
     LaunchedEffect(walletAddress) {
         android.util.Log.d("ProfileScreen", "LaunchedEffect triggered. walletAddress = $walletAddress")
@@ -683,44 +681,15 @@ fun ProfileScreen(
                     balance = balance
                 )
 
-                // Tabs
-                ProfileTabs(
-                    currentTab = currentTab,
-                    onTabSelected = { tab ->
-                        viewModel.setCurrentTab(tab)
-                        walletAddress?.let { address ->
-                            when (tab) {
-                                UserProfileViewModel.ProfileTab.OWNED -> viewModel.loadUserNFTs(address)
-                                UserProfileViewModel.ProfileTab.PURCHASES -> viewModel.loadUserPurchases(address)
-                                UserProfileViewModel.ProfileTab.SALES -> viewModel.loadUserSales(address)
-                            }
-                        }
-                    }
-                )
-
-                // Content
+                // Content (Purchased Items only)
                 Box(modifier = Modifier.weight(1f)) {
                     if (loading) {
                         LoadingState()
                     } else {
-                        when (currentTab) {
-                            UserProfileViewModel.ProfileTab.OWNED -> {
-                                if (userNFTs.isEmpty()) {
-                                    EmptyState("No NFTs owned yet")
-                                } else {
-                                    NFTGrid(items = userNFTs)
-                                }
-                            }
-                            UserProfileViewModel.ProfileTab.PURCHASES -> {
-                                if (userPurchases.isEmpty()) {
-                                    EmptyState("No purchases yet")
-                                } else {
-                                    PurchasedItemsGrid(items = userPurchases)
-                                }
-                            }
-                            UserProfileViewModel.ProfileTab.SALES -> {
-                                EmptyState("No sales yet")
-                            }
+                        if (userPurchases.isEmpty()) {
+                            EmptyState("No purchases yet")
+                        } else {
+                            PurchasedItemsGrid(items = userPurchases)
                         }
                     }
                 }
@@ -738,14 +707,14 @@ private fun ProfileHeader(
         modifier = Modifier.fillMaxWidth(),
         color = Color.Transparent
     ) {
-        Column(
+        Row(
             modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
+            // Avatar (Smaller)
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(60.dp)
                     .clip(CircleShape)
                     .background(
                         Brush.linearGradient(
@@ -758,122 +727,31 @@ private fun ProfileHeader(
                     Icons.Filled.Person,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(30.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
-            // Address
-            Text(
-                text = "${address.take(6)}...${address.takeLast(4)}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Balance
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    Icons.Filled.AccountBalanceWallet,
-                    contentDescription = null,
-                    tint = SuccessColor,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+            // Address only
+            Column {
                 Text(
-                    text = if (balance.isNotEmpty()) "$balance ETH" else "Loading...",
+                    text = "My Profile",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = "${address.take(6)}...${address.takeLast(4)}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = SuccessColor
+                    color = Color.White.copy(alpha = 0.7f)
                 )
             }
         }
     }
 }
 
-@Composable
-private fun ProfileTabs(
-    currentTab: UserProfileViewModel.ProfileTab,
-    onTabSelected: (UserProfileViewModel.ProfileTab) -> Unit
-) {
-    TabRow(
-        selectedTabIndex = currentTab.ordinal,
-        containerColor = Color.Transparent,
-        contentColor = Color.White,
-        indicator = { },
-        divider = { }
-    ) {
-        Tab(
-            selected = currentTab == UserProfileViewModel.ProfileTab.OWNED,
-            onClick = { onTabSelected(UserProfileViewModel.ProfileTab.OWNED) },
-            text = { Text("Owned") }
-        )
-        Tab(
-            selected = currentTab == UserProfileViewModel.ProfileTab.PURCHASES,
-            onClick = { onTabSelected(UserProfileViewModel.ProfileTab.PURCHASES) },
-            text = { Text("Purchases") }
-        )
-        Tab(
-            selected = currentTab == UserProfileViewModel.ProfileTab.SALES,
-            onClick = { onTabSelected(UserProfileViewModel.ProfileTab.SALES) },
-            text = { Text("Sales") }
-        )
-    }
-}
 
-@Composable
-private fun NFTGrid(items: List<com.example.chaintorquenative.mobile.data.api.UserNFT>) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(items, key = { it.tokenId ?: 0 }) { nft ->
-            NFTCard(nft = nft)
-        }
-    }
-}
-
-@Composable
-private fun NFTCard(nft: com.example.chaintorquenative.mobile.data.api.UserNFT) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
-    ) {
-        Column {
-            AsyncImage(
-                model = nft.getDisplayImage(),
-                contentDescription = nft.title ?: "NFT",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-                contentScale = ContentScale.Crop
-            )
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = nft.title ?: "Untitled",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "Token #${nft.tokenId ?: 0}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.6f)
-                )
-            }
-        }
-    }
-}
 
 @Composable
 private fun PurchasedItemsGrid(items: List<MarketplaceItem>) {
@@ -1034,7 +912,7 @@ fun WalletScreen(
     val error by viewModel.error.observeAsState()
     val connectionStatus by viewModel.connectionStatus.observeAsState()
 
-    var addressInput by remember { mutableStateOf("") }
+    // Manual input state removed
     var showWalletModal by remember { mutableStateOf(false) }
 
     // BottomSheet state for AppKit modal
@@ -1181,66 +1059,8 @@ fun WalletScreen(
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
-
-                    // Divider with "or"
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Divider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f))
-                        Text(
-                            text = "  or enter manually  ",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.4f)
-                        )
-                        Divider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f))
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Manual address input (fallback)
-                    OutlinedTextField(
-                        value = addressInput,
-                        onValueChange = { addressInput = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Wallet Address", color = Color.White.copy(alpha = 0.7f)) },
-                        placeholder = { Text("0x...", color = Color.White.copy(alpha = 0.4f)) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = PrimaryColor,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-                            cursorColor = PrimaryColor,
-                            focusedContainerColor = CardBackground,
-                            unfocusedContainerColor = CardBackground
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true,
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.AccountBalanceWallet,
-                                contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.7f)
-                            )
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedButton(
-                        onClick = {
-                            if (addressInput.isNotEmpty()) {
-                                viewModel.connectWallet(addressInput)
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = addressInput.isNotEmpty()
-                    ) {
-                        Text("Connect Address", color = PrimaryColor)
-                    }
+                    
+                    // Removed manual entry option as per request
                 } else {
                     // Connected Section
                     Card(
@@ -1263,7 +1083,7 @@ fun WalletScreen(
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
-                            Divider(color = Color.White.copy(alpha = 0.1f))
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Row(

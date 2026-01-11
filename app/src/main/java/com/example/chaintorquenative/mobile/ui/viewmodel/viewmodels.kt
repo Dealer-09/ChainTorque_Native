@@ -162,19 +162,11 @@ class UserProfileViewModel @Inject constructor(
     private val web3Repository: Web3Repository
 ) : ViewModel() {
 
-    enum class ProfileTab { OWNED, PURCHASES, SALES }
-
     private val _userProfile = MutableLiveData<UserProfile?>()
     val userProfile: LiveData<UserProfile?> = _userProfile
 
-    private val _userNFTs = MutableLiveData<List<UserNFT>>()
-    val userNFTs: LiveData<List<UserNFT>> = _userNFTs
-
     private val _userPurchases = MutableLiveData<List<MarketplaceItem>>()
     val userPurchases: LiveData<List<MarketplaceItem>> = _userPurchases
-
-    private val _userSales = MutableLiveData<List<MarketplaceItem>>()
-    val userSales: LiveData<List<MarketplaceItem>> = _userSales
 
     private val _walletBalance = MutableLiveData<String>("")
     val walletBalance: LiveData<String> = _walletBalance
@@ -184,9 +176,6 @@ class UserProfileViewModel @Inject constructor(
 
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
-
-    private val _currentTab = MutableLiveData<ProfileTab>(ProfileTab.OWNED)
-    val currentTab: LiveData<ProfileTab> = _currentTab
 
     fun loadUserData(address: String) {
         android.util.Log.d("UserProfileViewModel", "loadUserData called with address: $address")
@@ -203,22 +192,8 @@ class UserProfileViewModel @Inject constructor(
                     android.util.Log.e("UserProfileViewModel", "Register user failed: ${it.message}")
                 }
 
-            loadUserNFTs(address)
+            loadUserPurchases(address)
             _loading.value = false
-        }
-    }
-
-    fun loadUserNFTs(address: String) {
-        android.util.Log.d("UserProfileViewModel", "loadUserNFTs called with address: $address")
-        viewModelScope.launch {
-            userRepository.getUserNFTs(address)
-                .onSuccess { nfts ->
-                    android.util.Log.d("UserProfileViewModel", "Got ${nfts.size} NFTs for $address")
-                    _userNFTs.value = nfts
-                }
-                .onFailure { exception ->
-                    _error.value = exception.message
-                }
         }
     }
 
@@ -234,24 +209,6 @@ class UserProfileViewModel @Inject constructor(
                 }
             _loading.value = false
         }
-    }
-
-    fun loadUserSales(address: String) {
-        viewModelScope.launch {
-            _loading.value = true
-            userRepository.getUserSales(address)
-                .onSuccess { sales ->
-                    _userSales.value = sales
-                }
-                .onFailure { exception ->
-                    _error.value = exception.message
-                }
-            _loading.value = false
-        }
-    }
-
-    fun setCurrentTab(tab: ProfileTab) {
-        _currentTab.value = tab
     }
 
     fun clearError() {
@@ -329,33 +286,6 @@ class WalletViewModel @Inject constructor(
         _connectionStatus.value = ConnectionStatus.CONNECTING
         _error.value = null
         metaMaskManager.connect()
-    }
-    
-    /**
-     * Legacy method for manual address input (fallback)
-     */
-    fun connectWallet(address: String) {
-        android.util.Log.d("WalletViewModel", "Manual connectWallet called with address: $address")
-        viewModelScope.launch {
-            _loading.value = true
-            _connectionStatus.value = ConnectionStatus.CONNECTING
-            _error.value = null
-
-            if (web3Repository.isValidEthereumAddress(address)) {
-                android.util.Log.d("WalletViewModel", "Address is valid! Setting wallet address...")
-                _walletAddress.value = address
-                _isConnected.value = true
-                _connectionStatus.value = ConnectionStatus.CONNECTED
-                _balance.value = "0.0"
-                android.util.Log.d("WalletViewModel", "Wallet connected manually. Address: ${_walletAddress.value}")
-            } else {
-                android.util.Log.e("WalletViewModel", "Invalid address format: $address")
-                _error.value = "Invalid wallet address format"
-                _connectionStatus.value = ConnectionStatus.ERROR
-            }
-
-            _loading.value = false
-        }
     }
 
     fun disconnectWallet() {
