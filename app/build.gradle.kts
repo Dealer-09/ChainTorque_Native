@@ -31,7 +31,6 @@ android {
     
     buildFeatures {
         compose = true
-        viewBinding = true
     }
     
     compileOptions {
@@ -47,9 +46,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
     implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
     
     // Jetpack Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
