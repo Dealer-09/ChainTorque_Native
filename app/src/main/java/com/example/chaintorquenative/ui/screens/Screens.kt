@@ -83,7 +83,8 @@ fun MarketplaceScreen(
     // Debug: Log the wallet address to verify shared ViewModel
     android.util.Log.d("MarketplaceScreen", "walletAddress = $walletAddress, isConnected = ${walletAddress != null}")
 
-    var selectedCategory by remember { mutableStateOf("All") }
+    // Use ViewModel state for category
+    val selectedCategory by viewModel.selectedCategory.observeAsState("All")
     var showItemDetail by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
@@ -112,13 +113,7 @@ fun MarketplaceScreen(
             CategoryChips(
                 selectedCategory = selectedCategory,
                 onCategorySelected = { category ->
-                    selectedCategory = category
-                    // Filter items by category (simple title match for now)
-                    if (category == "All") {
-                        viewModel.searchItems("")
-                    } else {
-                        viewModel.searchItems(category)
-                    }
+                    viewModel.selectCategory(category)
                 }
             )
 

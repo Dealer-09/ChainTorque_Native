@@ -44,6 +44,9 @@ class MarketplaceViewModel @Inject constructor(
     private val _filteredItems = MutableLiveData<List<MarketplaceItem>>()
     val filteredItems: LiveData<List<MarketplaceItem>> = _filteredItems
 
+    private val _selectedCategory = MutableLiveData<String>("All")
+    val selectedCategory: LiveData<String> = _selectedCategory
+
     init {
         loadMarketplaceItems()
     }
@@ -56,7 +59,7 @@ class MarketplaceViewModel @Inject constructor(
             marketplaceRepository.getMarketplaceItems()
                 .onSuccess { items ->
                     _marketplaceItems.value = items
-                    filterItems(_searchQuery.value ?: "")
+                    applyFilters()
                 }
                 .onFailure { exception ->
                     _error.value = exception.message
@@ -66,22 +69,33 @@ class MarketplaceViewModel @Inject constructor(
         }
     }
 
-    private fun filterItems(query: String) {
+    private fun applyFilters() {
         val items = _marketplaceItems.value ?: emptyList()
-        if (query.isBlank()) {
-            _filteredItems.value = items
-        } else {
-            _filteredItems.value = items.filter { item ->
-                item.title?.contains(query, ignoreCase = true) == true ||
-                        item.description?.contains(query, ignoreCase = true) == true ||
-                        item.seller?.contains(query, ignoreCase = true) == true
-            }
+        val query = _searchQuery.value ?: ""
+        val category = _selectedCategory.value ?: "All"
+
+        _filteredItems.value = items.filter { item ->
+            // 1. Text Search (Title, Description, Seller)
+            val matchesSearch = query.isBlank() ||
+                    item.title?.contains(query, ignoreCase = true) == true ||
+                    item.description?.contains(query, ignoreCase = true) == true ||
+                    item.seller?.contains(query, ignoreCase = true) == true
+
+            // 2. Category Filter
+            val matchesCategory = category == "All" || item.category.equals(category, ignoreCase = true)
+
+            matchesSearch && matchesCategory
         }
     }
 
     fun searchItems(query: String) {
         _searchQuery.value = query
-        filterItems(query)
+        applyFilters()
+    }
+
+    fun selectCategory(category: String) {
+        _selectedCategory.value = category
+        applyFilters()
     }
 
     fun selectItem(item: MarketplaceItem) {
