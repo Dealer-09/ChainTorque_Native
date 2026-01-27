@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -30,12 +31,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import coil.compose.AsyncImage
 import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
 import com.example.chaintorquenative.mobile.ui.viewmodels.MarketplaceViewModel
@@ -79,6 +83,7 @@ fun MarketplaceScreen(
     val searchQuery by viewModel.searchQuery.observeAsState("")
     val walletAddress by walletViewModel.walletAddress.observeAsState()
     val selectedItem by viewModel.selectedItem.observeAsState()
+    val isRefreshing by viewModel.isRefreshing.observeAsState(false)
     
     // Debug: Log the wallet address to verify shared ViewModel
     android.util.Log.d("MarketplaceScreen", "walletAddress = $walletAddress, isConnected = ${walletAddress != null}")
@@ -88,6 +93,21 @@ fun MarketplaceScreen(
     var showItemDetail by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
+    
+    // Auto-refresh on resume (when returning from MetaMask or background)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                android.util.Log.d("MarketplaceScreen", "ON_RESUME: Refreshing marketplace items")
+                viewModel.loadMarketplaceItems()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -117,8 +137,12 @@ fun MarketplaceScreen(
                 }
             )
 
-            // Content
-            Box(modifier = Modifier.weight(1f)) {
+            // Content with Pull-to-Refresh
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.weight(1f)
+            ) {
                 when {
                     loading && items.isEmpty() -> {
                         LoadingState()
@@ -141,14 +165,6 @@ fun MarketplaceScreen(
                             }
                         )
                     }
-                }
-
-                // Pull to refresh indicator
-                if (loading && items.isNotEmpty()) {
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = PrimaryColor
-                    )
                 }
             }
         }
@@ -636,6 +652,7 @@ private fun StatItem(
 // PROFILE SCREEN
 // =============================================================================
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onNavigateToWallet: () -> Unit = {},
@@ -647,6 +664,22 @@ fun ProfileScreen(
     val balance by walletViewModel.balance.observeAsState("")
     val userPurchases by viewModel.userPurchases.observeAsState(emptyList())
     val loading by viewModel.loading.observeAsState(false)
+    val isRefreshing by viewModel.isRefreshing.observeAsState(false)
+
+    // Auto-refresh on resume (when returning from MetaMask or background)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, walletAddress) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && walletAddress != null) {
+                android.util.Log.d("ProfileScreen", "ON_RESUME: Refreshing user purchases")
+                viewModel.loadUserData(walletAddress!!)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(walletAddress) {
         android.util.Log.d("ProfileScreen", "LaunchedEffect triggered. walletAddress = $walletAddress")
@@ -676,9 +709,13 @@ fun ProfileScreen(
                     balance = balance
                 )
 
-                // Content (Purchased Items only)
-                Box(modifier = Modifier.weight(1f)) {
-                    if (loading) {
+                // Content with Pull-to-Refresh
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = { viewModel.refresh() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (loading && !isRefreshing) {
                         LoadingState()
                     } else {
                         if (userPurchases.isEmpty()) {

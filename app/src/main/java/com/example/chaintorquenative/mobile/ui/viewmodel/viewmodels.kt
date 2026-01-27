@@ -38,6 +38,9 @@ class MarketplaceViewModel @Inject constructor(
     private val _purchaseSuccess = MutableLiveData<String?>()
     val purchaseSuccess: LiveData<String?> = _purchaseSuccess
 
+    private val _isRefreshing = MutableLiveData<Boolean>(false)
+    val isRefreshing: LiveData<Boolean> = _isRefreshing
+
     private val _searchQuery = MutableLiveData<String>("")
     val searchQuery: LiveData<String> = _searchQuery
 
@@ -66,7 +69,13 @@ class MarketplaceViewModel @Inject constructor(
                 }
 
             _loading.value = false
+            _isRefreshing.value = false
         }
+    }
+
+    fun refresh() {
+        _isRefreshing.value = true
+        loadMarketplaceItems()
     }
 
     private fun applyFilters() {
@@ -191,8 +200,15 @@ class UserProfileViewModel @Inject constructor(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    private val _isRefreshing = MutableLiveData<Boolean>(false)
+    val isRefreshing: LiveData<Boolean> = _isRefreshing
+
+    // Store the current address for refresh purposes
+    private var currentAddress: String? = null
+
     fun loadUserData(address: String) {
         android.util.Log.d("UserProfileViewModel", "loadUserData called with address: $address")
+        currentAddress = address
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
@@ -222,6 +238,14 @@ class UserProfileViewModel @Inject constructor(
                     _error.value = exception.message
                 }
             _loading.value = false
+            _isRefreshing.value = false
+        }
+    }
+
+    fun refresh() {
+        currentAddress?.let { address ->
+            _isRefreshing.value = true
+            loadUserData(address)
         }
     }
 
