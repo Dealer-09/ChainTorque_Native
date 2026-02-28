@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.ViewInAr
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -75,7 +76,8 @@ private val categories = listOf(
 fun MarketplaceScreen(
     onNavigateToWallet: () -> Unit = {},
     viewModel: MarketplaceViewModel = hiltViewModel(),
-    walletViewModel: WalletViewModel = hiltViewModel()
+    walletViewModel: WalletViewModel = hiltViewModel(),
+    onNavigateToModelViewer: (modelUrl: String, title: String) -> Unit = { _, _ -> }
 ) {
     val items by viewModel.filteredItems.observeAsState(emptyList())
     val loading by viewModel.loading.observeAsState(false)
@@ -187,7 +189,11 @@ fun MarketplaceScreen(
                         onNavigateToWallet()
                     }
                 },
-                onConnectWallet = onNavigateToWallet
+                onConnectWallet = onNavigateToWallet,
+                onView3D = { modelUrl, title ->
+                    showItemDetail = false
+                    onNavigateToModelViewer(modelUrl, title)
+                }
             )
         }
     }
@@ -488,7 +494,8 @@ private fun ItemDetailSheet(
     walletAddress: String?,
     onDismiss: () -> Unit,
     onPurchase: (MarketplaceItem) -> Unit,
-    onConnectWallet: () -> Unit
+    onConnectWallet: () -> Unit,
+    onView3D: (modelUrl: String, title: String) -> Unit = { _, _ -> }
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -567,7 +574,32 @@ private fun ItemDetailSheet(
                 StatItem(icon = Icons.Filled.Star, value = "4.5", label = "Rating")
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // View 3D button
+            if (!item.modelUrl.isNullOrBlank()) {
+                OutlinedButton(
+                    onClick = { onView3D(item.modelUrl!!, item.title ?: "3D Model") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryColor),
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = PrimaryColor.copy(alpha = 0.6f)
+                    )
+                ) {
+                    Icon(
+                        Icons.Filled.ViewInAr,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("View 3D Model", fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             // Price and Buy Button
             Row(
@@ -657,7 +689,8 @@ private fun StatItem(
 fun ProfileScreen(
     onNavigateToWallet: () -> Unit = {},
     viewModel: UserProfileViewModel = hiltViewModel(),
-    walletViewModel: WalletViewModel = hiltViewModel()
+    walletViewModel: WalletViewModel = hiltViewModel(),
+    onNavigateToModelViewer: (modelUrl: String, title: String) -> Unit = { _, _ -> }
 ) {
     val walletAddress by walletViewModel.walletAddress.observeAsState()
     val isConnected by walletViewModel.isConnected.observeAsState(false)
@@ -721,7 +754,10 @@ fun ProfileScreen(
                         if (userPurchases.isEmpty()) {
                             EmptyState("No purchases yet")
                         } else {
-                            PurchasedItemsGrid(items = userPurchases)
+                            PurchasedItemsGrid(
+                                items = userPurchases,
+                                onView3D = onNavigateToModelViewer
+                            )
                         }
                     }
                 }
@@ -786,7 +822,10 @@ private fun ProfileHeader(
 
 
 @Composable
-private fun PurchasedItemsGrid(items: List<MarketplaceItem>) {
+private fun PurchasedItemsGrid(
+    items: List<MarketplaceItem>,
+    onView3D: (modelUrl: String, title: String) -> Unit = { _, _ -> }
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
@@ -794,13 +833,16 @@ private fun PurchasedItemsGrid(items: List<MarketplaceItem>) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(items, key = { it.tokenId ?: "" }) { item ->
-            PurchasedItemCard(item = item)
+            PurchasedItemCard(item = item, onView3D = onView3D)
         }
     }
 }
 
 @Composable
-private fun PurchasedItemCard(item: MarketplaceItem) {
+private fun PurchasedItemCard(
+    item: MarketplaceItem,
+    onView3D: (modelUrl: String, title: String) -> Unit = { _, _ -> }
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -847,21 +889,33 @@ private fun PurchasedItemCard(item: MarketplaceItem) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Download button
-                Button(
-                    onClick = { /* TODO: Download model */ },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
-                    contentPadding = PaddingValues(8.dp)
-                ) {
-                    Icon(
-                        Icons.Filled.Download,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Download", style = MaterialTheme.typography.labelMedium)
+                // View 3D / Download buttons
+                if (!item.modelUrl.isNullOrBlank()) {
+                    Button(
+                        onClick = { onView3D(item.modelUrl!!, item.title ?: "3D Model") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.ViewInAr,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("View 3D", style = MaterialTheme.typography.labelMedium)
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { /* no model available */ },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        enabled = false,
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        Text("No Model", style = MaterialTheme.typography.labelMedium)
+                    }
                 }
             }
         }

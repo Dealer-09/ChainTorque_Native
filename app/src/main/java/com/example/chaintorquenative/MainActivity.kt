@@ -1,6 +1,7 @@
 package com.example.chaintorquenative
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -22,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.chaintorquenative.mobile.ui.viewmodels.WalletViewModel
 import com.example.chaintorquenative.ui.components.BottomNavigationBar
 import com.example.chaintorquenative.ui.screens.MarketplaceScreen
+import com.example.chaintorquenative.ui.screens.ModelViewerScreen
 import com.example.chaintorquenative.ui.screens.ProfileScreen
 import com.example.chaintorquenative.ui.screens.WalletScreen
 import com.example.chaintorquenative.ui.screens.SettingsScreen
@@ -118,7 +120,12 @@ fun ChainTorqueApp() {
                         currentScreen = Screen.WALLET
                         navController.navigate("wallet")
                     },
-                    walletViewModel = sharedWalletViewModel
+                    walletViewModel = sharedWalletViewModel,
+                    onNavigateToModelViewer = { modelUrl, title ->
+                        navController.navigate(
+                            "model_viewer/${Uri.encode(modelUrl)}?title=${Uri.encode(title)}"
+                        )
+                    }
                 )
             }
             composable("profile") {
@@ -127,7 +134,12 @@ fun ChainTorqueApp() {
                         currentScreen = Screen.WALLET
                         navController.navigate("wallet")
                     },
-                    walletViewModel = sharedWalletViewModel
+                    walletViewModel = sharedWalletViewModel,
+                    onNavigateToModelViewer = { modelUrl, title ->
+                        navController.navigate(
+                            "model_viewer/${Uri.encode(modelUrl)}?title=${Uri.encode(title)}"
+                        )
+                    }
                 )
             }
             composable("wallet") {
@@ -135,6 +147,15 @@ fun ChainTorqueApp() {
             }
             composable("settings") {
                 SettingsScreen()
+            }
+            composable("model_viewer/{modelUrl}?title={title}") { backStackEntry ->
+                val modelUrl = Uri.decode(backStackEntry.arguments?.getString("modelUrl") ?: "")
+                val title = Uri.decode(backStackEntry.arguments?.getString("title") ?: "3D Model")
+                ModelViewerScreen(
+                    modelUrl = modelUrl,
+                    title = title,
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }
