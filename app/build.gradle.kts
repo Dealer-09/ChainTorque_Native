@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -62,8 +62,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.6")
 
     // Hilt for Dependency Injection (using KSP instead of KAPT)
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    ksp("com.google.dagger:hilt-compiler:2.51.1")
+    implementation("com.google.dagger:hilt-android:2.52")
+    ksp("com.google.dagger:hilt-compiler:2.52")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Retrofit & Networking
@@ -92,5 +92,5 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     
     // MetaMask SDK regarding Native Integration
-    implementation("io.metamask.androidsdk:metamask-android-sdk:0.7.3")
+    implementation("io.metamask.androidsdk:metamask-android-sdk:0.6.6")
 }

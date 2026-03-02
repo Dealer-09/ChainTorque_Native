@@ -157,13 +157,13 @@ class MarketplaceViewModel @Inject constructor(
                 data = data,
                 value = valueHex,
                 onSuccess = { txHash ->
-                     _purchaseSuccess.value = txHash
-                     _loading.value = false
+                     _purchaseSuccess.postValue(txHash)
+                     _loading.postValue(false)
                      android.util.Log.d("MarketplaceViewModel", "Purchase successful: $txHash")
                 },
                 onError = { errorMsg ->
-                    _error.value = "Purchase failed: $errorMsg"
-                    _loading.value = false
+                    _error.postValue("Purchase failed: $errorMsg")
+                    _loading.postValue(false)
                     android.util.Log.e("MarketplaceViewModel", "Purchase error: $errorMsg")
                 }
             )
