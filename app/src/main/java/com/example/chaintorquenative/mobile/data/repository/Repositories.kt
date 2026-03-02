@@ -51,7 +51,7 @@ class MarketplaceRepository @Inject constructor(
         tokenId: Int,
         transactionHash: String,
         buyerAddress: String,
-        price: Double
+        price: String
     ): Result<MarketplaceItem> {
         return try {
             val request = SyncPurchaseRequest(tokenId, transactionHash, buyerAddress, price)

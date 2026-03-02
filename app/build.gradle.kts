@@ -54,8 +54,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.activity:activity-compose")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose")
     implementation("androidx.compose.runtime:runtime-livedata")
 
     // Navigation Compose
@@ -83,10 +83,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    implementation("androidx.fragment:fragment-ktx:1.8.2")
-    implementation("androidx.compose.material:material-icons-extended-android:1.6.8")
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    implementation("androidx.compose.material:material-icons-extended-android")
     
     // Coil for image loading in Compose
     implementation("io.coil-kt:coil-compose:2.5.0")

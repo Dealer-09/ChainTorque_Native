@@ -18,9 +18,15 @@ class MetaMaskManager @Inject constructor() {
     private val _connectionState = MutableStateFlow<WalletConnectionState>(WalletConnectionState.Disconnected)
     val connectionState: StateFlow<WalletConnectionState> = _connectionState.asStateFlow()
 
-    private lateinit var ethereum: Ethereum
+    private var ethereum: Ethereum? = null
+    private var isInitialized = false
 
     fun initialize(context: Context) {
+        if (isInitialized) {
+            Log.d(TAG, "MetaMask SDK already initialized, skipping")
+            return
+        }
+        
         val dappMetadata = DappMetadata(
             "ChainTorque",
             "https://chaintorque.com",
@@ -28,62 +34,38 @@ class MetaMaskManager @Inject constructor() {
         )
 
         ethereum = Ethereum(context, dappMetadata)
+        isInitialized = true
 
         Log.d(TAG, "MetaMask SDK Initialized")
     }
 
+    private companion object {
+        const val SEPOLIA_CHAIN_ID_HEX = "0xaa36a7"
+        const val SEPOLIA_CHAIN_ID_DEC = "11155111"
+    }
+
     fun connect() {
+        val eth = ethereum ?: run {
+            Log.e(TAG, "MetaMask SDK not initialized")
+            _connectionState.value = WalletConnectionState.Error("SDK not initialized. Restart the app.")
+            return
+        }
         Log.d(TAG, "Connecting to MetaMask...")
         _connectionState.value = WalletConnectionState.Connecting
 
-        ethereum.connect { result ->
+        eth.connect { result ->
             when (result) {
                 is io.metamask.androidsdk.Result.Success.Item -> {
                     val address = result.value
                     Log.d(TAG, "Connected: $address. Switching to Sepolia...")
-                    
-                    // Force switch to Sepolia (0xaa36a7)
-                    switchChain("0xaa36a7", 
-                        onSuccess = {
-                            Log.d(TAG, "Switched to Sepolia successfully")
-                            _connectionState.value = WalletConnectionState.Connected(
-                                address = address,
-                                chainId = "11155111"
-                            )
-                        },
-                        onError = { error ->
-                            Log.e(TAG, "Failed to switch chain: $error")
-                            // Connect anyway but warn? Or fail? 
-                            // Let's connect but potentially wrong network.
-                             _connectionState.value = WalletConnectionState.Connected(
-                                address = address,
-                                chainId = "11155111" // We assume user might handle it manually if auto-switch fails
-                            )
-                        }
-                    )
+                    handlePostConnect(address)
                 }
 
                 is io.metamask.androidsdk.Result.Success.Items -> {
                     val addresses = result.value
                     val address = addresses.firstOrNull() ?: ""
                     Log.d(TAG, "Connected (Items): $address. Switching to Sepolia...")
-                    
-                     switchChain("0xaa36a7", 
-                        onSuccess = {
-                            Log.d(TAG, "Switched to Sepolia successfully")
-                            _connectionState.value = WalletConnectionState.Connected(
-                                address = address,
-                                chainId = "11155111"
-                            )
-                        },
-                        onError = { error ->
-                            Log.e(TAG, "Failed to switch chain: $error")
-                             _connectionState.value = WalletConnectionState.Connected(
-                                address = address,
-                                chainId = "11155111"
-                            )
-                        }
-                    )
+                    handlePostConnect(address)
                 }
 
                 is io.metamask.androidsdk.Result.Error -> {
@@ -100,8 +82,27 @@ class MetaMaskManager @Inject constructor() {
 
     }
 
+    /** After a successful connect, switch to Sepolia and emit state */
+    private fun handlePostConnect(address: String) {
+        switchChain(SEPOLIA_CHAIN_ID_HEX,
+            onSuccess = {
+                Log.d(TAG, "Switched to Sepolia successfully")
+                _connectionState.value = WalletConnectionState.Connected(
+                    address = address,
+                    chainId = SEPOLIA_CHAIN_ID_DEC
+                )
+            },
+            onError = { error ->
+                Log.e(TAG, "Failed to switch chain: $error — user may be on wrong network")
+                _connectionState.value = WalletConnectionState.Error(
+                    "Connected but wrong network. Please switch to Sepolia in MetaMask."
+                )
+            }
+        )
+    }
+
     fun disconnect() {
-        ethereum.disconnect()
+        ethereum?.disconnect()
         _connectionState.value = WalletConnectionState.Disconnected
     }
 
@@ -131,12 +132,17 @@ class MetaMaskManager @Inject constructor() {
         // Sepolia chain ID is recommended to be strictly enforced if needed, 
         // but MetaMask usually handles network switching prompt if chain doesn't match.
 
+        val eth = ethereum ?: run {
+            onError("SDK not initialized")
+            return
+        }
+
         val request = io.metamask.androidsdk.EthereumRequest(
             method = "eth_sendTransaction",
             params = listOf(params)
         )
 
-        ethereum.sendRequest(request) { result ->
+        eth.sendRequest(request) { result ->
             when (result) {
                 is io.metamask.androidsdk.Result.Success.Item -> {
                     onSuccess(result.value)
@@ -170,7 +176,12 @@ class MetaMaskManager @Inject constructor() {
 
         Log.d(TAG, "Requesting switch to chain: $chainId")
 
-        ethereum.sendRequest(request) { result ->
+        val eth = ethereum ?: run {
+            onError("SDK not initialized")
+            return
+        }
+
+        eth.sendRequest(request) { result ->
             when (result) {
                 is io.metamask.androidsdk.Result.Success -> {
                    Log.d(TAG, "Switch chain success")
@@ -207,7 +218,12 @@ class MetaMaskManager @Inject constructor() {
             params = listOf(params)
         )
 
-        ethereum.sendRequest(request) { result ->
+        val eth = ethereum ?: run {
+            onError("SDK not initialized")
+            return
+        }
+
+        eth.sendRequest(request) { result ->
              when (result) {
                 is io.metamask.androidsdk.Result.Success -> {
                     Log.d(TAG, "Add chain success. Switching...")

@@ -105,7 +105,7 @@ data class SyncPurchaseRequest(
     val tokenId: Int,
     val transactionHash: String,
     val buyerAddress: String,
-    val price: Double
+    val price: String
 )
 
 // Retrofit API Interface

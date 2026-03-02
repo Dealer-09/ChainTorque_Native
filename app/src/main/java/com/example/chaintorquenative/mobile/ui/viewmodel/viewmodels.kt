@@ -127,6 +127,12 @@ class MarketplaceViewModel @Inject constructor(
         }
     }
 
+    companion object {
+        // Must match the currently deployed contract — keep in sync with
+        // backend/contract-address.json and web constants.ts
+        const val CONTRACT_ADDRESS = "0x28095101822b08707C58D8d04aaEa0DF0E8A3ab6"
+    }
+
     fun purchaseItem(tokenId: Int, buyerAddress: String, price: Double) {
         viewModelScope.launch {
             _loading.value = true
@@ -134,7 +140,19 @@ class MarketplaceViewModel @Inject constructor(
             _purchaseSuccess.value = null
 
             android.util.Log.d("MarketplaceViewModel", "purchaseItem called - tokenId: $tokenId, buyer: $buyerAddress, price: $price ETH")
-            
+
+            // 0. Pre-purchase verification — check if item is already sold via backend
+            val itemCheck = marketplaceRepository.getMarketplaceItem(tokenId)
+            itemCheck.onSuccess { item ->
+                if (item.status == "sold") {
+                    _error.value = "This item has already been sold."
+                    _loading.value = false
+                    return@launch
+                }
+            }.onFailure { err ->
+                android.util.Log.w("MarketplaceViewModel", "Pre-purchase check failed: ${err.message} — proceeding anyway")
+            }
+
             // 1. Prepare Data for purchaseToken(uint256)
             // Selector: 0xc2db2c42
             val functionSelector = "0xc2db2c42"
@@ -146,20 +164,32 @@ class MarketplaceViewModel @Inject constructor(
                 .multiply(java.math.BigDecimal.TEN.pow(18))
                 .toBigInteger()
             val valueHex = "0x" + priceWei.toString(16)
-            
-            // Contract Address (Fresh Start v2)
-            val contractAddress = "0x38Ada2D66de5A9d0aF3734E96aC11E6B2366BfF4"
 
-            // 3. Send Transaction
+            // 3. Send Transaction to the deployed contract
             metaMaskManager.sendTransaction(
                 fromAddress = buyerAddress,
-                toAddress = contractAddress,
+                toAddress = CONTRACT_ADDRESS,
                 data = data,
                 value = valueHex,
                 onSuccess = { txHash ->
                      _purchaseSuccess.postValue(txHash)
                      _loading.postValue(false)
                      android.util.Log.d("MarketplaceViewModel", "Purchase successful: $txHash")
+                     
+                     // 4. Sync purchase with backend so web/mobile stay in sync
+                     viewModelScope.launch {
+                         marketplaceRepository.syncPurchase(
+                             tokenId = tokenId,
+                             transactionHash = txHash,
+                             buyerAddress = buyerAddress,
+                             price = price.toString()
+                         ).onSuccess {
+                             android.util.Log.d("MarketplaceViewModel", "Backend sync successful")
+                             loadMarketplaceItems() // Refresh list
+                         }.onFailure { syncError ->
+                             android.util.Log.e("MarketplaceViewModel", "Backend sync failed: ${syncError.message}")
+                         }
+                     }
                 },
                 onError = { errorMsg ->
                     _error.postValue("Purchase failed: $errorMsg")

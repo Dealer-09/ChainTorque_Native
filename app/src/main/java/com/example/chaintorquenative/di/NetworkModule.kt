@@ -1,5 +1,6 @@
 package com.example.chaintorquenative.di
 
+import com.example.chaintorquenative.BuildConfig
 import com.example.chaintorquenative.mobile.data.api.ChainTorqueApiService
 import dagger.Module
 import dagger.Provides
@@ -28,16 +29,32 @@ object NetworkModule {
     @Volatile
     private var activeBaseUrl: String = PRIMARY_URL
 
+    // Timestamp of when we switched to fallback — allows periodic recovery check
+    @Volatile
+    private var fallbackSwitchedAtMs: Long = 0L
+
+    // Try primary again every 5 minutes while on fallback
+    private const val RECOVERY_INTERVAL_MS = 5 * 60 * 1000L
+
     /**
      * Interceptor that handles automatic fallback to secondary backend
-     * if the primary backend is unavailable (connection errors, 5xx errors)
+     * if the primary backend is unavailable (connection errors, 5xx errors).
+     * Periodically re-checks the primary URL so we recover once it's back up.
      */
     class FallbackInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
             val originalRequest = chain.request()
             val originalUrl = originalRequest.url.toString()
-            
-            // If we've already switched to fallback, proactively rewrite ALL requests
+
+            // If on fallback long enough, probe primary again
+            if (activeBaseUrl == FALLBACK_URL &&
+                System.currentTimeMillis() - fallbackSwitchedAtMs > RECOVERY_INTERVAL_MS
+            ) {
+                activeBaseUrl = PRIMARY_URL
+                android.util.Log.d("NetworkModule", "🔄 Recovery: retrying primary $PRIMARY_URL")
+            }
+
+            // Rewrite URL to activeBaseUrl if needed
             val requestToExecute = if (activeBaseUrl == FALLBACK_URL && originalUrl.contains(PRIMARY_URL)) {
                 val newUrl = originalUrl.replace(PRIMARY_URL, FALLBACK_URL)
                 originalRequest.newBuilder().url(newUrl).build()
@@ -51,10 +68,8 @@ object NetworkModule {
                 // If we get a server error (5xx) on primary, try fallback
                 if (response.code >= 500 && activeBaseUrl == PRIMARY_URL) {
                     response.close()
-                    activeBaseUrl = FALLBACK_URL
-                    android.util.Log.d("NetworkModule", "🔄 Switching to fallback backend: $FALLBACK_URL")
+                    switchToFallback("5xx response")
                     
-                    // Rebuild URL with fallback
                     val newUrl = requestToExecute.url.toString()
                         .replace(PRIMARY_URL, FALLBACK_URL)
                     val fallbackRequest = requestToExecute.newBuilder()
@@ -68,8 +83,7 @@ object NetworkModule {
             } catch (e: IOException) {
                 // Connection error on primary, try fallback
                 if (activeBaseUrl == PRIMARY_URL) {
-                    activeBaseUrl = FALLBACK_URL
-                    android.util.Log.d("NetworkModule", "🔄 Connection failed. Switching to fallback backend: $FALLBACK_URL")
+                    switchToFallback("IOException: ${e.message}")
                     
                     val newUrl = requestToExecute.url.toString()
                         .replace(PRIMARY_URL, FALLBACK_URL)
@@ -83,13 +97,23 @@ object NetworkModule {
                 }
             }
         }
+
+        private fun switchToFallback(reason: String) {
+            activeBaseUrl = FALLBACK_URL
+            fallbackSwitchedAtMs = System.currentTimeMillis()
+            android.util.Log.d("NetworkModule", "🔄 Switching to fallback ($reason): $FALLBACK_URL")
+        }
     }
 
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.BASIC
+            }
         }
         
         return OkHttpClient.Builder()
