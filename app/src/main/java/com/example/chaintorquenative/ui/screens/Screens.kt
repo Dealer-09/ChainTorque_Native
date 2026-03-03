@@ -1,4 +1,4 @@
-package com.example.chaintorquenative.ui.screens
+﻿package com.example.chaintorquenative.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -46,6 +46,9 @@ import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
 import com.example.chaintorquenative.mobile.ui.viewmodels.MarketplaceViewModel
 import com.example.chaintorquenative.mobile.ui.viewmodels.UserProfileViewModel
 import com.example.chaintorquenative.mobile.ui.viewmodels.WalletViewModel
+import androidx.navigation.NavController
+import com.reown.appkit.ui.openAppKit
+import com.reown.appkit.ui.components.button.rememberAppKitState
 
 // ChainTorque Brand Colors
 private val PrimaryColor = Color(0xFF6366F1) // Indigo
@@ -989,7 +992,8 @@ private fun ConnectWalletPrompt(onConnectWallet: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WalletScreen(
-    viewModel: WalletViewModel = hiltViewModel()
+    viewModel: WalletViewModel = hiltViewModel(),
+    navController: NavController? = null
 ) {
     val walletAddress by viewModel.walletAddress.observeAsState()
     val isConnected by viewModel.isConnected.observeAsState(false)
@@ -997,13 +1001,6 @@ fun WalletScreen(
     val loading by viewModel.loading.observeAsState(false)
     val error by viewModel.error.observeAsState()
     val connectionStatus by viewModel.connectionStatus.observeAsState()
-
-    // Manual input state removed
-    var showWalletModal by remember { mutableStateOf(false) }
-
-    // BottomSheet state for AppKit modal
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val coroutineScope = rememberCoroutineScope()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -1079,32 +1076,42 @@ fun WalletScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 if (!isConnected) {
-                    // WalletConnect Button (Primary)
+                    // WalletConnect Button - opens AppKit modal
                     Button(
-                        onClick = { showWalletModal = true },
+                        onClick = {
+                            viewModel.prepareConnect()
+                            navController?.openAppKit(
+                                shouldOpenChooseNetwork = false,
+                                onError = { /* error handled by delegate */ }
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF6851B)), // MetaMask orange
-                        enabled = !loading && !showWalletModal
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3396FF)), // WalletConnect blue
+                        enabled = !loading
                     ) {
-                        if (loading || showWalletModal) {
+                        if (loading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 color = Color.White
                             )
                         } else {
-                            Text("🦊", fontSize = 20.sp)
+                            Icon(
+                                Icons.Filled.AccountBalanceWallet,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Connect with MetaMask", fontWeight = FontWeight.SemiBold)
+                            Text("Connect Wallet", fontWeight = FontWeight.SemiBold)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = "or other WalletConnect wallets",
+                        text = "MetaMask, Trust Wallet, Rainbow & more",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.5f)
                     )
@@ -1144,9 +1151,32 @@ fun WalletScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    // Removed manual entry option as per request
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Info card about WalletConnect
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBackground.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                Icons.Filled.Info,
+                                contentDescription = null,
+                                tint = PrimaryColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Connects securely via WalletConnect. Your wallet app will open for approval.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
                 } else {
                     // Connected Section
                     Card(
@@ -1212,109 +1242,7 @@ fun WalletScreen(
             }
         }
     }
-
-    // AppKit Wallet Modal Bottom Sheet
-    if (showWalletModal) {
-        ModalBottomSheet(
-            onDismissRequest = { showWalletModal = false },
-            sheetState = sheetState,
-            containerColor = CardBackground
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Connect Wallet",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Scan the QR code with MetaMask or your preferred wallet app",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // MetaMask option
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            viewModel.connectWallet()
-                            showWalletModal = false
-                        },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF21262D))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("🦊", fontSize = 28.sp)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text("MetaMask", fontWeight = FontWeight.SemiBold, color = Color.White)
-                            Text("Popular", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.5f))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // WalletConnect option
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            viewModel.connectWallet()
-                            showWalletModal = false
-                        },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF21262D))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("🔗", fontSize = 28.sp)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text("WalletConnect", fontWeight = FontWeight.SemiBold, color = Color.White)
-                            Text("Scan QR Code", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.5f))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                OutlinedButton(
-                    onClick = { showWalletModal = false },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Cancel", color = Color.White)
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-        }
-    }
 }
-
 // =============================================================================
 // SETTINGS SCREEN
 // =============================================================================

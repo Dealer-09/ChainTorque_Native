@@ -1,4 +1,4 @@
-package com.example.chaintorquenative.mobile.ui.viewmodels
+﻿package com.example.chaintorquenative.mobile.ui.viewmodels
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -8,9 +8,8 @@ import com.example.chaintorquenative.mobile.data.repository.MarketplaceRepositor
 import com.example.chaintorquenative.mobile.data.repository.UserRepository
 import com.example.chaintorquenative.mobile.data.repository.Web3Repository
 import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
-import com.example.chaintorquenative.mobile.data.api.UserNFT
 import com.example.chaintorquenative.mobile.data.api.UserProfile
-import com.example.chaintorquenative.wallet.MetaMaskManager
+import com.example.chaintorquenative.wallet.WalletConnectManager
 import com.example.chaintorquenative.wallet.WalletConnectionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -20,7 +19,7 @@ import javax.inject.Inject
 class MarketplaceViewModel @Inject constructor(
     private val marketplaceRepository: MarketplaceRepository,
     private val web3Repository: Web3Repository,
-    private val metaMaskManager: MetaMaskManager
+    private val walletConnectManager: WalletConnectManager
 ) : ViewModel() {
 
     private val _marketplaceItems = MutableLiveData<List<MarketplaceItem>>()
@@ -84,13 +83,11 @@ class MarketplaceViewModel @Inject constructor(
         val category = _selectedCategory.value ?: "All"
 
         _filteredItems.value = items.filter { item ->
-            // 1. Text Search (Title, Description, Seller)
             val matchesSearch = query.isBlank() ||
                     item.title?.contains(query, ignoreCase = true) == true ||
                     item.description?.contains(query, ignoreCase = true) == true ||
                     item.seller?.contains(query, ignoreCase = true) == true
 
-            // 2. Category Filter
             val matchesCategory = category == "All" || item.category.equals(category, ignoreCase = true)
 
             matchesSearch && matchesCategory
@@ -128,8 +125,6 @@ class MarketplaceViewModel @Inject constructor(
     }
 
     companion object {
-        // Must match the currently deployed contract — keep in sync with
-        // backend/contract-address.json and web constants.ts
         const val CONTRACT_ADDRESS = "0x28095101822b08707C58D8d04aaEa0DF0E8A3ab6"
     }
 
@@ -141,7 +136,7 @@ class MarketplaceViewModel @Inject constructor(
 
             android.util.Log.d("MarketplaceViewModel", "purchaseItem called - tokenId: $tokenId, buyer: $buyerAddress, price: $price ETH")
 
-            // 0. Pre-purchase verification — check if item is already sold via backend
+            // Pre-purchase verification
             val itemCheck = marketplaceRepository.getMarketplaceItem(tokenId)
             itemCheck.onSuccess { item ->
                 if (item.status == "sold") {
@@ -150,23 +145,22 @@ class MarketplaceViewModel @Inject constructor(
                     return@launch
                 }
             }.onFailure { err ->
-                android.util.Log.w("MarketplaceViewModel", "Pre-purchase check failed: ${err.message} — proceeding anyway")
+                android.util.Log.w("MarketplaceViewModel", "Pre-purchase check failed: ${err.message} - proceeding anyway")
             }
 
-            // 1. Prepare Data for purchaseToken(uint256)
-            // Selector: 0xc2db2c42
+            // Prepare Data for purchaseToken(uint256)
             val functionSelector = "0xc2db2c42"
             val paddedTokenId = "%064x".format(tokenId)
             val data = functionSelector + paddedTokenId
-            
-            // 2. Prepare Value (Price to Wei Hex)
+
+            // Prepare Value (Price to Wei Hex)
             val priceWei = java.math.BigDecimal(price)
                 .multiply(java.math.BigDecimal.TEN.pow(18))
                 .toBigInteger()
             val valueHex = "0x" + priceWei.toString(16)
 
-            // 3. Send Transaction to the deployed contract
-            metaMaskManager.sendTransaction(
+            // Send Transaction via WalletConnect relay
+            walletConnectManager.sendTransaction(
                 fromAddress = buyerAddress,
                 toAddress = CONTRACT_ADDRESS,
                 data = data,
@@ -175,8 +169,8 @@ class MarketplaceViewModel @Inject constructor(
                      _purchaseSuccess.postValue(txHash)
                      _loading.postValue(false)
                      android.util.Log.d("MarketplaceViewModel", "Purchase successful: $txHash")
-                     
-                     // 4. Sync purchase with backend so web/mobile stay in sync
+
+                     // Sync purchase with backend
                      viewModelScope.launch {
                          marketplaceRepository.syncPurchase(
                              tokenId = tokenId,
@@ -185,7 +179,7 @@ class MarketplaceViewModel @Inject constructor(
                              price = price.toString()
                          ).onSuccess {
                              android.util.Log.d("MarketplaceViewModel", "Backend sync successful")
-                             loadMarketplaceItems() // Refresh list
+                             loadMarketplaceItems()
                          }.onFailure { syncError ->
                              android.util.Log.e("MarketplaceViewModel", "Backend sync failed: ${syncError.message}")
                          }
@@ -233,7 +227,6 @@ class UserProfileViewModel @Inject constructor(
     private val _isRefreshing = MutableLiveData<Boolean>(false)
     val isRefreshing: LiveData<Boolean> = _isRefreshing
 
-    // Store the current address for refresh purposes
     private var currentAddress: String? = null
 
     fun loadUserData(address: String) {
@@ -248,7 +241,7 @@ class UserProfileViewModel @Inject constructor(
                     android.util.Log.d("UserProfileViewModel", "User registered: ${profile.walletAddress}")
                     _userProfile.value = profile
                 }
-                .onFailure { 
+                .onFailure {
                     android.util.Log.e("UserProfileViewModel", "Register user failed: ${it.message}")
                 }
 
@@ -287,7 +280,7 @@ class UserProfileViewModel @Inject constructor(
 @HiltViewModel
 class WalletViewModel @Inject constructor(
     private val web3Repository: Web3Repository,
-    private val metaMaskManager: MetaMaskManager
+    private val walletConnectManager: WalletConnectManager
 ) : ViewModel() {
 
     enum class ConnectionStatus { DISCONNECTED, CONNECTING, CONNECTED, ERROR }
@@ -309,14 +302,14 @@ class WalletViewModel @Inject constructor(
 
     private val _connectionStatus = MutableLiveData<ConnectionStatus>(ConnectionStatus.DISCONNECTED)
     val connectionStatus: LiveData<ConnectionStatus> = _connectionStatus
-    
+
     private val _chainName = MutableLiveData<String>("Sepolia")
     val chainName: LiveData<String> = _chainName
 
     init {
-        // Observe MetaMask state changes
+        // Observe WalletConnect state changes
         viewModelScope.launch {
-            metaMaskManager.connectionState.collect { state ->
+            walletConnectManager.connectionState.collect { state ->
                 when (state) {
                     is WalletConnectionState.Disconnected -> {
                         _connectionStatus.value = ConnectionStatus.DISCONNECTED
@@ -347,17 +340,18 @@ class WalletViewModel @Inject constructor(
     }
 
     /**
-     * Connect wallet using MetaMask SDK
+     * Prepare the WalletConnect manager for connection.
+     * The actual modal is opened by the Compose UI via AppKit.
      */
-    fun connectWallet() {
+    fun prepareConnect() {
         _loading.value = true
         _connectionStatus.value = ConnectionStatus.CONNECTING
         _error.value = null
-        metaMaskManager.connect()
+        walletConnectManager.prepareConnect()
     }
 
     fun disconnectWallet() {
-        metaMaskManager.disconnect()
+        walletConnectManager.disconnect()
         _walletAddress.value = null
         _isConnected.value = false
         _balance.value = ""

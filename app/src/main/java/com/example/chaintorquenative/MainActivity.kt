@@ -1,14 +1,23 @@
+﻿@file:OptIn(
+    androidx.compose.material.ExperimentalMaterialApi::class,
+    com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi::class
+)
+
 package com.example.chaintorquenative
 
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -29,28 +39,53 @@ import com.example.chaintorquenative.ui.screens.WalletScreen
 import com.example.chaintorquenative.ui.screens.SettingsScreen
 import com.example.chaintorquenative.ui.screens.AnimatedSplashScreen
 import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
-import com.example.chaintorquenative.wallet.MetaMaskManager
+import com.google.accompanist.navigation.material.BottomSheetNavigator
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.google.accompanist.navigation.material.ModalBottomSheetLayout
+import com.reown.appkit.client.AppKit
+import com.reown.appkit.ui.appKitGraph
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var metaMaskManager: MetaMaskManager
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
-        // Initialize MetaMask SDK
-        metaMaskManager.initialize(this)
+
+        // Handle WalletConnect deep link on launch
+        handleWalletConnectDeepLink(intent)
 
         setContent {
             ChainTorqueTheme {
                 ChainTorqueAppWithSplash()
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Handle WalletConnect deep link when app is already running
+        handleWalletConnectDeepLink(intent)
+    }
+
+    private fun handleWalletConnectDeepLink(intent: Intent?) {
+        val data = intent?.dataString ?: return
+        if (data.contains("wc_ev") || data.contains("wc?")) {
+            Log.d(TAG, "Handling WalletConnect deep link: $data")
+            AppKit.handleDeepLink(data) { error ->
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.e(TAG, "WC deep link error: ${error.throwable.message}")
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Wallet connection error: ${error.throwable.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
@@ -78,84 +113,96 @@ fun ChainTorqueAppWithSplash() {
 
 @Composable
 fun ChainTorqueApp() {
-    val navController = rememberNavController()
+    // Accompanist bottom sheet state for AppKit modal
+    val sheetState = rememberModalBottomSheetState(
+        initialValue = ModalBottomSheetValue.Hidden,
+        skipHalfExpanded = true
+    )
+    val bottomSheetNavigator = BottomSheetNavigator(sheetState)
+    val navController = rememberNavController(bottomSheetNavigator)
     var currentScreen by remember { mutableStateOf(Screen.MARKETPLACE) }
-    
+
     // Create a SHARED WalletViewModel at the app level
-    // This ensures all screens see the same wallet state!
     val sharedWalletViewModel: WalletViewModel = hiltViewModel()
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            BottomNavigationBar(
-                currentScreen = currentScreen,
-                onScreenSelected = { screen ->
-                    currentScreen = screen
-                    val route = when (screen) {
-                        Screen.MARKETPLACE -> "marketplace"
-                        Screen.PROFILE -> "profile"
-                        Screen.WALLET -> "wallet"
-                        Screen.SETTINGS -> "settings"
-                    }
-                    navController.navigate(route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
+    ModalBottomSheetLayout(bottomSheetNavigator = bottomSheetNavigator) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            bottomBar = {
+                BottomNavigationBar(
+                    currentScreen = currentScreen,
+                    onScreenSelected = { screen ->
+                        currentScreen = screen
+                        val route = when (screen) {
+                            Screen.MARKETPLACE -> "marketplace"
+                            Screen.PROFILE -> "profile"
+                            Screen.WALLET -> "wallet"
+                            Screen.SETTINGS -> "settings"
                         }
-                        launchSingleTop = true
-                        restoreState = true
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
+                )
+            }
+        ) { paddingValues ->
+            NavHost(
+                navController = navController,
+                startDestination = "marketplace",
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable("marketplace") {
+                    MarketplaceScreen(
+                        onNavigateToWallet = {
+                            currentScreen = Screen.WALLET
+                            navController.navigate("wallet")
+                        },
+                        walletViewModel = sharedWalletViewModel,
+                        onNavigateToModelViewer = { modelUrl, title ->
+                            navController.navigate(
+                                "model_viewer/${Uri.encode(modelUrl)}?title=${Uri.encode(title)}"
+                            )
+                        }
+                    )
                 }
-            )
-        }
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = "marketplace",
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable("marketplace") {
-                MarketplaceScreen(
-                    onNavigateToWallet = {
-                        currentScreen = Screen.WALLET
-                        navController.navigate("wallet")
-                    },
-                    walletViewModel = sharedWalletViewModel,
-                    onNavigateToModelViewer = { modelUrl, title ->
-                        navController.navigate(
-                            "model_viewer/${Uri.encode(modelUrl)}?title=${Uri.encode(title)}"
-                        )
-                    }
-                )
-            }
-            composable("profile") {
-                ProfileScreen(
-                    onNavigateToWallet = {
-                        currentScreen = Screen.WALLET
-                        navController.navigate("wallet")
-                    },
-                    walletViewModel = sharedWalletViewModel,
-                    onNavigateToModelViewer = { modelUrl, title ->
-                        navController.navigate(
-                            "model_viewer/${Uri.encode(modelUrl)}?title=${Uri.encode(title)}"
-                        )
-                    }
-                )
-            }
-            composable("wallet") {
-                WalletScreen(viewModel = sharedWalletViewModel)
-            }
-            composable("settings") {
-                SettingsScreen()
-            }
-            composable("model_viewer/{modelUrl}?title={title}") { backStackEntry ->
-                val modelUrl = Uri.decode(backStackEntry.arguments?.getString("modelUrl") ?: "")
-                val title = Uri.decode(backStackEntry.arguments?.getString("title") ?: "3D Model")
-                ModelViewerScreen(
-                    modelUrl = modelUrl,
-                    title = title,
-                    onBack = { navController.popBackStack() }
-                )
+                composable("profile") {
+                    ProfileScreen(
+                        onNavigateToWallet = {
+                            currentScreen = Screen.WALLET
+                            navController.navigate("wallet")
+                        },
+                        walletViewModel = sharedWalletViewModel,
+                        onNavigateToModelViewer = { modelUrl, title ->
+                            navController.navigate(
+                                "model_viewer/${Uri.encode(modelUrl)}?title=${Uri.encode(title)}"
+                            )
+                        }
+                    )
+                }
+                composable("wallet") {
+                    WalletScreen(
+                        viewModel = sharedWalletViewModel,
+                        navController = navController
+                    )
+                }
+                composable("settings") {
+                    SettingsScreen()
+                }
+                composable("model_viewer/{modelUrl}?title={title}") { backStackEntry ->
+                    val modelUrl = Uri.decode(backStackEntry.arguments?.getString("modelUrl") ?: "")
+                    val title = Uri.decode(backStackEntry.arguments?.getString("title") ?: "3D Model")
+                    ModelViewerScreen(
+                        modelUrl = modelUrl,
+                        title = title,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                // AppKit modal routes (required for WalletConnect QR code / wallet selection)
+                appKitGraph(navController)
             }
         }
     }

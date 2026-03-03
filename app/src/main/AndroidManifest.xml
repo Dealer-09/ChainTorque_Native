@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
@@ -43,7 +43,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ChainTorqueNative"
         tools:replace="android:dataExtractionRules,android:fullBackupContent">
-        
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -53,14 +53,21 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            
-            <!-- Deep link for WalletConnect callbacks -->
+
+            <!-- WalletConnect callback deep link -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="chaintorque" />
-                <data android:host="metamask" />
+                <data android:scheme="chaintorque" android:host="wc" />
+            </intent-filter>
+
+            <!-- Legacy MetaMask deep link (kept for compatibility) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="chaintorque" android:host="metamask" />
             </intent-filter>
         </activity>
     </application>
