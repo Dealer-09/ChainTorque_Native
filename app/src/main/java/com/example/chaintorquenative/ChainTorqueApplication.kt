@@ -5,7 +5,7 @@ import com.reown.android.Core
 import com.reown.android.CoreClient
 import com.reown.appkit.client.AppKit
 import com.reown.appkit.client.Modal
-import com.reown.appkit.presets.AppKitChainsPresets
+import com.reown.appkit.utils.EthUtils
 import dagger.hilt.android.HiltAndroidApp
 import android.util.Log
 
@@ -28,20 +28,20 @@ class ChainTorqueApplication : Application() {
             redirect = "chaintorque://wc"
         )
 
-        // Define Sepolia chain explicitly in case preset key differs
-        val sepoliaChain = AppKitChainsPresets.ethChains["11155111"] ?: Modal.Model.Chain(
+        // Sepolia testnet chain — uses same EthUtils methods as all preset chains
+        val sepoliaChain = Modal.Model.Chain(
             chainName = "Ethereum Sepolia",
             chainNamespace = "eip155",
             chainReference = "11155111",
-            requiredMethods = listOf("eth_sendTransaction", "personal_sign", "eth_signTypedData"),
-            optionalMethods = listOf("eth_accounts", "eth_chainId"),
-            events = listOf("chainChanged", "accountsChanged"),
+            requiredMethods = EthUtils.ethRequiredMethods,
+            optionalMethods = EthUtils.ethOptionalMethods,
+            events = EthUtils.ethEvents,
             token = Modal.Model.Token(name = "Sepolia ETH", symbol = "ETH", decimal = 18),
             rpcUrl = "https://rpc.sepolia.org",
             blockExplorerUrl = "https://sepolia.etherscan.io"
         )
 
-        // IMPORTANT: Set chains BEFORE initializing so the session namespace uses Sepolia only
+        // Set Sepolia as the ONLY chain before initialization
         AppKit.setChains(listOf(sepoliaChain))
         Log.d(TAG, "Chains set to Sepolia only: ${sepoliaChain.id}")
 

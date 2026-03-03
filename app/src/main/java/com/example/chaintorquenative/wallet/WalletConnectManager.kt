@@ -4,6 +4,7 @@ import android.util.Log
 import com.reown.appkit.client.AppKit
 import com.reown.appkit.client.Modal
 import com.reown.appkit.client.models.request.Request
+import com.reown.appkit.client.models.Session
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -149,21 +150,63 @@ class WalletConnectManager @Inject constructor() {
      */
     private fun checkExistingSession() {
         try {
-            val account = AppKit.getAccount()
-            if (account != null) {
-                Log.d(TAG, "Found existing session")
-                val addr = account.address
-                val chainId = account.chain.id.substringAfter(":")
-                _connectionState.value = WalletConnectionState.Connected(
-                    address = addr,
-                    chainId = chainId.ifBlank { SEPOLIA_CHAIN_ID }
-                )
+            val session = AppKit.getSession()
+            if (session != null) {
+                when (session) {
+                    is Session.WalletConnectSession -> {
+                        // Verify the session namespace includes Sepolia
+                        val eip155Ns = session.namespaces["eip155"]
+                        val sessionChains = eip155Ns?.chains ?: emptyList()
+                        val sessionAccounts = eip155Ns?.accounts ?: emptyList()
+                        val hasSepolia = sessionChains.any { it.contains(SEPOLIA_CHAIN_ID) }
+                            || sessionAccounts.any { it.contains(SEPOLIA_CHAIN_ID) }
+
+                        Log.d(TAG, "WC session chains=$sessionChains accounts=$sessionAccounts hasSepolia=$hasSepolia")
+
+                        if (!hasSepolia) {
+                            Log.w(TAG, "Session missing Sepolia, disconnecting...")
+                            forceDisconnect()
+                            return
+                        }
+
+                        val account = AppKit.getAccount()
+                        if (account != null) {
+                            Log.d(TAG, "Restored Sepolia session: ${account.address}")
+                            _connectionState.value = WalletConnectionState.Connected(
+                                address = account.address,
+                                chainId = SEPOLIA_CHAIN_ID
+                            )
+                        }
+                    }
+                    is Session.CoinbaseSession -> {
+                        val account = AppKit.getAccount()
+                        if (account != null) {
+                            _connectionState.value = WalletConnectionState.Connected(
+                                address = account.address,
+                                chainId = SEPOLIA_CHAIN_ID
+                            )
+                        }
+                    }
+                }
             } else {
                 Log.d(TAG, "No existing session found")
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error checking existing session: ${e.message}")
         }
+    }
+
+    private fun forceDisconnect() {
+        AppKit.disconnect(
+            onSuccess = {
+                Log.d(TAG, "Stale session cleared successfully")
+                _connectionState.value = WalletConnectionState.Disconnected
+            },
+            onError = { throwable: Throwable ->
+                Log.w(TAG, "Stale session clear error: ${throwable.message}")
+                _connectionState.value = WalletConnectionState.Disconnected
+            }
+        )
     }
 
     /**
@@ -229,7 +272,6 @@ class WalletConnectManager @Inject constructor() {
         val request = Request(
             method = "eth_sendTransaction",
             params = txParams,
-            chainId = "eip155:11155111",
         )
 
         val onSuccessCallback: () -> Unit = {
