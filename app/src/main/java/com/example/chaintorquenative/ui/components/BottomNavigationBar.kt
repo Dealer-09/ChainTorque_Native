@@ -9,11 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.chaintorquenative.Screen
 
-// Brand colors
-private val PrimaryColor = Color(0xFF6366F1)
-private val SurfaceColor = Color(0xFF1E293B)
+import com.example.chaintorquenative.Screen
+import com.example.chaintorquenative.ui.theme.AppColors
+
+
 
 @Composable
 fun BottomNavigationBar(
@@ -21,7 +21,7 @@ fun BottomNavigationBar(
     onScreenSelected: (Screen) -> Unit
 ) {
     NavigationBar(
-        containerColor = SurfaceColor,
+        containerColor = AppColors.CardBg,
         contentColor = Color.White
     ) {
         val items = listOf(
@@ -38,11 +38,11 @@ fun BottomNavigationBar(
                 selected = currentScreen == item.screen,
                 onClick = { onScreenSelected(item.screen) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = PrimaryColor,
-                    selectedTextColor = PrimaryColor,
+                    selectedIconColor = AppColors.Primary,
+                    selectedTextColor = AppColors.Primary,
                     unselectedIconColor = Color.White.copy(alpha = 0.6f),
                     unselectedTextColor = Color.White.copy(alpha = 0.6f),
-                    indicatorColor = PrimaryColor.copy(alpha = 0.1f)
+                    indicatorColor = AppColors.Primary.copy(alpha = 0.1f)
                 )
             )
         }

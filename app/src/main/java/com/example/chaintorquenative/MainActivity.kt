@@ -1,4 +1,4 @@
-﻿@file:OptIn(
+@file:OptIn(
     androidx.compose.material.ExperimentalMaterialApi::class,
     com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi::class
 )
@@ -32,11 +32,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.chaintorquenative.mobile.ui.viewmodels.WalletViewModel
 import com.example.chaintorquenative.ui.components.BottomNavigationBar
-import com.example.chaintorquenative.ui.screens.MarketplaceScreen
+import com.example.chaintorquenative.ui.screens.marketplace.MarketplaceScreen
 import com.example.chaintorquenative.ui.screens.ModelViewerScreen
-import com.example.chaintorquenative.ui.screens.ProfileScreen
-import com.example.chaintorquenative.ui.screens.WalletScreen
-import com.example.chaintorquenative.ui.screens.SettingsScreen
+import com.example.chaintorquenative.ui.screens.profile.ProfileScreen
+import com.example.chaintorquenative.ui.screens.wallet.WalletScreen
+import com.example.chaintorquenative.ui.screens.settings.SettingsScreen
 import com.example.chaintorquenative.ui.screens.AnimatedSplashScreen
 import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
 import com.google.accompanist.navigation.material.BottomSheetNavigator
