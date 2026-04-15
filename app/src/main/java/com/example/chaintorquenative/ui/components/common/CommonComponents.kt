@@ -92,18 +92,4 @@ fun EmptyState(message: String, modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-fun ImagePlaceholder(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFF374151))
-            .clip(RoundedCornerShape(8.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "📦",
-            style = MaterialTheme.typography.headlineMedium
-        )
-    }
-}
+

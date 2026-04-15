@@ -64,11 +64,14 @@ data class UserNFT(
     val imageUrl: String? = null,
     val modelUrl: String? = null,
     val owner: String? = null,
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val status: String? = null,   // "active" | "sold"
+    val price: Double? = null,
+    val priceETH: Double? = null
 ) {
-    fun getDisplayImage(): String {
-        return image ?: imageUrl ?: ""
-    }
+    fun getDisplayImage(): String = image ?: imageUrl ?: ""
+    fun getDisplayPrice(): Double = priceETH ?: price ?: 0.0
+    fun isSold(): Boolean = status?.lowercase() == "sold"
 }
 
 data class UserProfile(

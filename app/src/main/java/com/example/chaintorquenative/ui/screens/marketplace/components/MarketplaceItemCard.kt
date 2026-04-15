@@ -28,7 +28,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
-import com.example.chaintorquenative.ui.components.common.ImagePlaceholder
 import com.example.chaintorquenative.ui.theme.AppColors
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
@@ -172,12 +171,12 @@ fun MarketplaceItemCard(
             ) {
                 val imageUrl = item.getDisplayImage()
                 if (imageUrl.isNotBlank()) {
-                    SubcomposeAsyncImage(
+                        SubcomposeAsyncImage(
                         model = imageUrl,
                         contentDescription = item.title,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
-                        error = { ImagePlaceholder() },
+                        error = { ImageFallback() },
                         loading = {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(
@@ -189,7 +188,7 @@ fun MarketplaceItemCard(
                         }
                     )
                 } else {
-                    ImagePlaceholder()
+                    ImageFallback()
                 }
 
                 Surface(
@@ -277,5 +276,14 @@ fun MarketplaceItemCard(
                 }
             }
         }
+    }
+}
+@Composable
+private fun ImageFallback() {
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color(0xFF374151)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("📦", style = MaterialTheme.typography.headlineMedium)
     }
 }

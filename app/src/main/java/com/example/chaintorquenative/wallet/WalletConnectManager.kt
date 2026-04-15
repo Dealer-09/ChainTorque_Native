@@ -1,13 +1,10 @@
-﻿package com.example.chaintorquenative.wallet
+package com.example.chaintorquenative.wallet
 
 import android.util.Log
 import com.reown.appkit.client.AppKit
 import com.reown.appkit.client.Modal
 import com.reown.appkit.client.models.request.Request
 import com.reown.appkit.client.models.Session
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +12,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "WalletConnect"
+private const val SEPOLIA_CHAIN_ID = "11155111"
 
 /**
  * Singleton that wraps the Reown AppKit (WalletConnect v2) SDK.
@@ -33,11 +31,6 @@ class WalletConnectManager @Inject constructor() {
 
     private val _connectionState = MutableStateFlow<WalletConnectionState>(WalletConnectionState.Disconnected)
     val connectionState: StateFlow<WalletConnectionState> = _connectionState.asStateFlow()
-
-    private val scope = CoroutineScope(Dispatchers.Main + Job())
-
-    private val CONTRACT_ADDRESS = "0x28095101822b08707C58D8d04aaEa0DF0E8A3ab6"
-    private val SEPOLIA_CHAIN_ID = "11155111"
 
     /**
      * AppKit.ModalDelegate that receives all session lifecycle events from the
@@ -234,16 +227,8 @@ class WalletConnectManager @Inject constructor() {
         )
     }
 
-    /**
-     * Get the currently connected wallet address, or null.
-     */
-    fun getConnectedAddress(): String? {
-        return try {
-            AppKit.getAccount()?.address
-        } catch (e: Exception) {
-            null
-        }
-    }
+    /** Returns the currently connected wallet address, or null. Only used internally. */
+    internal fun getConnectedAddress(): String? = try { AppKit.getAccount()?.address } catch (e: Exception) { null }
 
     /**
      * Send an eth_sendTransaction request via the WalletConnect relay.

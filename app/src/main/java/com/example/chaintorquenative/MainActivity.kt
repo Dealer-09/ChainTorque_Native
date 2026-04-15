@@ -2,6 +2,7 @@
     androidx.compose.material.ExperimentalMaterialApi::class,
     com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi::class
 )
+@file:Suppress("DEPRECATION") // Accompanist BottomSheetNavigator: cannot migrate until Reown AppKit ships AndroidX nav-material support
 
 package com.example.chaintorquenative
 

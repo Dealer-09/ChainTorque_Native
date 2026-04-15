@@ -12,8 +12,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.chaintorquenative.mobile.ui.viewmodels.MarketplaceViewModel
 import com.example.chaintorquenative.mobile.ui.viewmodels.WalletViewModel
 import com.example.chaintorquenative.ui.components.common.EmptyState

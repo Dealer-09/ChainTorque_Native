@@ -1,4 +1,4 @@
-﻿package com.example.chaintorquenative
+package com.example.chaintorquenative
 
 import android.app.Application
 import com.reown.android.Core
@@ -47,7 +47,7 @@ class ChainTorqueApplication : Application() {
 
         CoreClient.initialize(
             application = this,
-            projectId = "b70eaea6d21665a88e8ffea79bd02b2a",
+            projectId = BuildConfig.WALLETCONNECT_PROJECT_ID,
             metaData = appMetaData,
         ) { error ->
             Log.e(TAG, "CoreClient init error: ${error.throwable.message}")

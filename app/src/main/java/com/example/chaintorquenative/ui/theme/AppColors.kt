@@ -13,4 +13,5 @@ object AppColors {
     val CardBg        = Color(0xFF1E293B) // Slate 800
     val Success       = Color(0xFF10B981) // Emerald
     val Warning       = Color(0xFFF59E0B) // Amber
+    val Error         = Color(0xFFEF4444) // Red-500
 }

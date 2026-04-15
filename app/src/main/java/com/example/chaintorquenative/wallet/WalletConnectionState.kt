@@ -8,8 +8,8 @@ sealed class WalletConnectionState {
     object Connecting : WalletConnectionState()
     data class Connected(
         val address: String,
-        val chainId: String,
-        val balance: String = "0.0"
+        val chainId: String
     ) : WalletConnectionState()
+
     data class Error(val message: String) : WalletConnectionState()
 }

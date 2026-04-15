@@ -1,8 +1,16 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+}
+
+// ─── Load local.properties secrets into BuildConfig ──────────────────────────
+val localProperties = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
 }
 
 android {
@@ -17,6 +25,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ── Secrets from local.properties (never hardcode these) ────────────
+        buildConfigField("String", "WALLETCONNECT_PROJECT_ID",
+            "\"${localProperties.getProperty("WALLETCONNECT_PROJECT_ID", "\"\"")}\""
+        )
+        buildConfigField("String", "CONTRACT_ADDRESS",
+            "\"${localProperties.getProperty("CONTRACT_ADDRESS", "0x0000000000000000000000000000000000000000")}\""
+        )
     }
     buildTypes {
         release {
@@ -53,6 +69,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose")  // LocalLifecycleOwner
     implementation("androidx.compose.runtime:runtime-livedata")
 
     // Accompanist Navigation Material (required by Reown AppKit modal)
