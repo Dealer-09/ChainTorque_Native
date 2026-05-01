@@ -76,7 +76,7 @@ CONTRACT_ADDRESS="0x9685Ac9d1d63C1442161e64A7A325Eaa7a505F00"
 The app connects to the ChainTorque backend server for off-chain metadata:
 - `GET /api/marketplace` - List NFT assets
 - `GET /api/marketplace/:id` - Asset details
-- `POST /api/user/sync-purchase` - Sync blockchain purchases to DB
+- `POST /api/marketplace/sync-purchase` - Sync blockchain purchases to DB
 - `GET /api/user/:address/nfts` - User's NFTs
 - `GET /api/user/:address/sales` - User's sales history
 
@@ -88,11 +88,3 @@ The app connects to the ChainTorque backend server for off-chain metadata:
 4. Open ChainTorque, go to the **Wallet** tab, and tap "Connect Wallet".
 5. Approve the connection via the AppKit modal.
 6. To buy: Select an item, tap "Buy Now", accept the irreversibility warning, and sign the transaction in your wallet.
-
-## License
-
-MIT License
-
----
-
-Built with ❤️ for the Web3 community
