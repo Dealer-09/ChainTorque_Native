@@ -7,9 +7,10 @@ A native Android application for browsing, purchasing, and managing NFT-based CA
 ## Features
 
 - **NFT Marketplace** - Browse and purchase premium 3D CAD assets
-- **MetaMask SDK Integration** - Connect directly with MetaMask Android App
-- **User Profiles** - View owned NFTs, purchase history, and sales
-- **Sepolia Testnet** - Built for Ethereum Sepolia testnet transactions
+- **WalletConnect (AppKit)** - Connect with over 300+ crypto wallets seamlessly
+- **User Profiles** - View owned NFTs, purchase history, and generated sales
+- **Live RPC Data** - Direct blockchain interaction via `eth_getBalance` and `eth_sendTransaction`
+- **Sepolia Testnet** - Built strictly for the Ethereum Sepolia testnet
 
 ## Tech Stack
 
@@ -18,26 +19,30 @@ A native Android application for browsing, purchasing, and managing NFT-based CA
 | UI | Jetpack Compose, Material 3 |
 | Architecture | MVVM, Hilt DI |
 | Networking | Retrofit, OkHttp |
-| Wallet | MetaMask Android SDK (v0.5.1) |
+| Wallet | Reown AppKit (WalletConnect) |
 | State | StateFlow, LiveData |
-| Blockchain | Native `eth_sendTransaction` |
+| Blockchain | Native JSON-RPC & AppKit interactions |
 
 ## Project Structure
 
 ```
 app/src/main/java/com/example/chaintorquenative/
-├── di/                    # Hilt dependency injection
+├── di/                    # Hilt dependency injection modules
 ├── mobile/
 │   ├── data/
-│   │   ├── api/           # API service & models
-│   │   └── repository/    # Data repositories
+│   │   ├── api/           # Retrofit services & models
+│   │   └── repository/    # Data repositories (Web3 & Market)
 │   └── ui/
-│       └── viewmodel/     # ViewModels
+│       └── viewmodel/     # Screen ViewModels
 ├── ui/
-│   ├── components/        # Reusable UI components
-│   ├── screens/           # Compose screens
-│   └── theme/             # App theming
-├── wallet/                # MetaMask SDK integration
+│   ├── components/        # Reusable global UI components
+│   ├── screens/           
+│   │   ├── marketplace/   # Marketplace & Item detail screens
+│   │   ├── profile/       # User profile, inventory, and sales
+│   │   ├── settings/      # Configuration & URLs
+│   │   └── wallet/        # Wallet connection state UI
+│   └── theme/             # AppColors and global theming
+├── wallet/                # AppKit/WalletConnect integration managers
 ├── ChainTorqueApplication.kt
 └── MainActivity.kt
 ```
@@ -47,11 +52,19 @@ app/src/main/java/com/example/chaintorquenative/
 ### Prerequisites
 - Android Studio Ladybug or later
 - JDK 17+
-- Android SDK 33+
+- Android SDK 34+
 
-### Configuration
-1. No API keys needed for MetaMask SDK default integration
-2. Uses standard `io.metamask.androidsdk` dependency
+### Configuration (Critical)
+To build and run the app, you **must** configure your local environment secrets.
+Create a `local.properties` file in the root directory (`ChainTorque_Native/local.properties`) and add the following keys:
+
+```properties
+# Reown AppKit / WalletConnect Cloud Project ID
+WALLET_CONNECT_PROJECT_ID="your_walletconnect_project_id_here"
+
+# The deployed ChainTorque Smart Contract Address on Sepolia
+CONTRACT_ADDRESS="0x9685Ac9d1d63C1442161e64A7A325Eaa7a505F00"
+```
 
 ### Build
 ```bash
@@ -60,20 +73,21 @@ app/src/main/java/com/example/chaintorquenative/
 
 ## API Endpoints
 
-The app connects to a backend server for:
+The app connects to the ChainTorque backend server for off-chain metadata:
 - `GET /api/marketplace` - List NFT assets
 - `GET /api/marketplace/:id` - Asset details
-- `POST /api/user/register` - Register wallet
+- `POST /api/user/sync-purchase` - Sync blockchain purchases to DB
 - `GET /api/user/:address/nfts` - User's NFTs
+- `GET /api/user/:address/sales` - User's sales history
 
 ## Testing
 
-1. Install **MetaMask** on your Android device/emulator
-2. Create/Import a wallet and switch to **Sepolia Testnet**
-3. Get test ETH from a [Sepolia faucet](https://sepoliafaucet.com/)
-4. Open ChainTorque, go to **Wallet** tab, and tap "Connect with MetaMask"
-5. Approve the connection in the MetaMask app
-6. To buy: Select an item, tap "Buy Now", and sign the transaction in MetaMask
+1. Install any compatible Wallet (e.g., **MetaMask**, **Trust Wallet**) on your Android device/emulator.
+2. Create/Import a wallet and switch the network to the **Sepolia Testnet**.
+3. Get test ETH from a [Sepolia faucet](https://sepoliafaucet.com/).
+4. Open ChainTorque, go to the **Wallet** tab, and tap "Connect Wallet".
+5. Approve the connection via the AppKit modal.
+6. To buy: Select an item, tap "Buy Now", accept the irreversibility warning, and sign the transaction in your wallet.
 
 ## License
 
