@@ -87,23 +87,6 @@ data class UserProfile(
     val memberSince: String? = null
 )
 
-data class Web3Status(
-    val connected: Boolean,
-    val account: String?,
-    val network: String?,
-    val balance: String?
-)
-
-data class PurchaseRequest(
-    val tokenId: Int,
-    val buyerAddress: String,
-    val price: Double
-)
-
-data class PurchaseResponse(
-    val transactionHash: String
-)
-
 data class SyncPurchaseRequest(
     val tokenId: Int,
     val transactionHash: String,
@@ -114,19 +97,12 @@ data class SyncPurchaseRequest(
 // Retrofit API Interface
 interface ChainTorqueApiService {
 
-    // Health Check
-    @GET("health")
-    suspend fun healthCheck(): Response<Map<String, String>>
-
-    // Marketplace Endpoints - matches backend routes/marketplace.js
+    // Marketplace Endpoints
     @GET("api/marketplace")
     suspend fun getMarketplaceItems(): Response<ApiResponse<List<MarketplaceItem>>>
 
     @GET("api/marketplace/{tokenId}")
     suspend fun getMarketplaceItem(@Path("tokenId") tokenId: Int): Response<ApiResponse<MarketplaceItem>>
-
-    @GET("api/marketplace/stats")
-    suspend fun getMarketplaceStats(): Response<ApiResponse<Any>>
 
     // User Endpoints - matches backend routes/user.js
     @GET("api/user/{address}/nfts")
@@ -144,8 +120,4 @@ interface ChainTorqueApiService {
     // Sync purchase after blockchain transaction
     @POST("api/marketplace/sync-purchase")
     suspend fun syncPurchase(@Body request: SyncPurchaseRequest): Response<ApiResponse<MarketplaceItem>>
-
-    // Web3 Endpoints
-    @GET("api/web3/status")
-    suspend fun getWeb3Status(): Response<ApiResponse<Web3Status>>
 }

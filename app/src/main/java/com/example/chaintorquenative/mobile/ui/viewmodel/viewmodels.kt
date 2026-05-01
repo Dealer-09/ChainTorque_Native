@@ -40,9 +40,6 @@ class MarketplaceViewModel @Inject constructor(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    private val _purchaseSuccess = MutableLiveData<String?>()
-    val purchaseSuccess: LiveData<String?> = _purchaseSuccess
-
     private val _isRefreshing = MutableLiveData(false)
     val isRefreshing: LiveData<Boolean> = _isRefreshing
 
@@ -87,18 +84,7 @@ class MarketplaceViewModel @Inject constructor(
     fun searchItems(query: String)       { _searchQuery.value = query; applyFilters() }
     fun selectCategory(category: String) { _selectedCategory.value = category; applyFilters() }
     fun selectItem(item: MarketplaceItem) { _selectedItem.value = item }
-    fun clearError()           { _error.value = null }
-    fun clearPurchaseSuccess() { _purchaseSuccess.value = null }
-
-    fun loadItemDetails(tokenId: Int) {
-        viewModelScope.launch {
-            _loading.value = true
-            marketplaceRepository.getMarketplaceItem(tokenId)
-                .onSuccess { _selectedItem.value = it }
-                .onFailure { _error.value = it.message }
-            _loading.value = false
-        }
-    }
+    fun clearError() { _error.value = null }
 
     /**
      * Executes the on-chain purchase after the user has confirmed in the UI.
@@ -108,7 +94,6 @@ class MarketplaceViewModel @Inject constructor(
         viewModelScope.launch {
             _loading.value = true
             _error.value   = null
-            _purchaseSuccess.value = null
 
             android.util.Log.d("MarketplaceVM", "purchaseItem tokenId=$tokenId buyer=$buyerAddress price=$price")
 
@@ -134,7 +119,7 @@ class MarketplaceViewModel @Inject constructor(
                 data        = data,
                 value       = valueHex,
                 onSuccess   = { txHash ->
-                    _purchaseSuccess.postValue(txHash)
+                    android.util.Log.d("MarketplaceVM", "Purchase success tx=$txHash")
                     _loading.postValue(false)
                     viewModelScope.launch {
                         marketplaceRepository.syncPurchase(tokenId, txHash, buyerAddress, price.toString())
@@ -268,9 +253,6 @@ class WalletViewModel @Inject constructor(
     private val _connectionStatus = MutableLiveData(ConnectionStatus.DISCONNECTED)
     val connectionStatus: LiveData<ConnectionStatus> = _connectionStatus
 
-    private val _chainName        = MutableLiveData("Sepolia")
-    val chainName: LiveData<String> = _chainName
-
     init {
         viewModelScope.launch {
             walletConnectManager.connectionState.collect { state ->
@@ -290,7 +272,6 @@ class WalletViewModel @Inject constructor(
                         _isConnected.value      = true
                         _walletAddress.value    = state.address
                         _loading.value          = false
-                        _chainName.value        = if (state.chainId.contains("11155111")) "Sepolia" else "Unknown"
 
                         // ── Fetch real on-chain balance from Sepolia RPC ──────
                         viewModelScope.launch {

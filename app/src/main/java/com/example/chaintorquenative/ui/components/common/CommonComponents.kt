@@ -91,5 +91,3 @@ fun EmptyState(message: String, modifier: Modifier = Modifier) {
         }
     }
 }
-
-

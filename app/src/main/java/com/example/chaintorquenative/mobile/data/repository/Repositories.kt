@@ -116,16 +116,4 @@ class Web3Repository @Inject constructor(
             "0.0000"
         }
     }
-
-    suspend fun getWeb3Status(): Result<Web3Status> = runCatching {
-        val r = apiService.getWeb3Status()
-        r.body()?.takeIf { r.isSuccessful && it.success }?.data
-            ?: throw Exception(r.body()?.error ?: "API ${r.code()}")
-    }
-
-    fun isValidEthereumAddress(address: String): Boolean =
-        address.matches(Regex("^0x[a-fA-F0-9]{40}$"))
-
-    fun formatAddress(address: String): String =
-        if (address.length > 10) "${address.take(6)}...${address.takeLast(4)}" else address
 }
