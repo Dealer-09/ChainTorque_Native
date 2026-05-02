@@ -1,6 +1,7 @@
 package com.example.chaintorquenative.mobile.data.repository
 
 import android.util.Log
+import com.example.chaintorquenative.BuildConfig
 import com.example.chaintorquenative.mobile.data.api.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -90,7 +91,7 @@ class Web3Repository @Inject constructor(
 ) {
     private companion object {
         const val TAG = "Web3Repository"
-        const val SEPOLIA_RPC = "https://rpc.sepolia.org"
+        val SEPOLIA_RPC: String = BuildConfig.RPC_URL
         val ETH_DECIMALS: BigDecimal = BigDecimal.TEN.pow(18)
     }
 

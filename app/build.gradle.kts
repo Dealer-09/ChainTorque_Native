@@ -33,6 +33,9 @@ android {
         buildConfigField("String", "CONTRACT_ADDRESS",
             "\"${localProperties.getProperty("CONTRACT_ADDRESS", "0x0000000000000000000000000000000000000000")}\""
         )
+        buildConfigField("String", "RPC_URL",
+            "\"${localProperties.getProperty("RPC_URL", "https://rpc.sepolia.org")}\""
+        )
     }
     buildTypes {
         release {

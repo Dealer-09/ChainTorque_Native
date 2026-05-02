@@ -8,6 +8,7 @@ import com.reown.appkit.client.models.Session
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -108,8 +109,7 @@ class WalletConnectManager @Inject constructor() {
 
         override fun onRequestExpired(request: Modal.Model.ExpiredRequest) {
             Log.w(TAG, "Request expired")
-            pendingTxCallback?.invoke(false, null, "Transaction request expired")
-            pendingTxCallback = null
+            pendingTxCallback.getAndSet(null)?.invoke(false, null, "Transaction request expired")
         }
 
         override fun onConnectionStateChange(state: Modal.Model.ConnectionState) {
@@ -127,8 +127,8 @@ class WalletConnectManager @Inject constructor() {
         }
     }
 
-    // Transaction callback management
-    private var pendingTxCallback: ((success: Boolean, txHash: String?, error: String?) -> Unit)? = null
+    // Transaction callback management (thread-safe)
+    private val pendingTxCallback = AtomicReference<((success: Boolean, txHash: String?, error: String?) -> Unit)?>(null)
 
     init {
         AppKit.setDelegate(modalDelegate)
@@ -242,7 +242,7 @@ class WalletConnectManager @Inject constructor() {
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        pendingTxCallback = { success, txHash, errorMsg ->
+        pendingTxCallback.set { success, txHash, errorMsg ->
             if (success && txHash != null) {
                 onSuccess(txHash)
             } else {
@@ -268,8 +268,7 @@ class WalletConnectManager @Inject constructor() {
             onSuccess = onSuccessCallback,
             onError = { throwable: Throwable ->
                 Log.e(TAG, "Transaction request error: ${throwable.message}")
-                pendingTxCallback?.invoke(false, null, throwable.message ?: "Request failed")
-                pendingTxCallback = null
+                pendingTxCallback.getAndSet(null)?.invoke(false, null, throwable.message ?: "Request failed")
             }
         )
     }
@@ -282,13 +281,11 @@ class WalletConnectManager @Inject constructor() {
             is Modal.Model.JsonRpcResponse.JsonRpcResult -> {
                 val txHash = result.result?.toString()
                 Log.d(TAG, "Transaction successful: $txHash")
-                pendingTxCallback?.invoke(true, txHash, null)
-                pendingTxCallback = null
+                pendingTxCallback.getAndSet(null)?.invoke(true, txHash, null)
             }
             is Modal.Model.JsonRpcResponse.JsonRpcError -> {
                 Log.e(TAG, "Transaction error: ${result.message}")
-                pendingTxCallback?.invoke(false, null, result.message)
-                pendingTxCallback = null
+                pendingTxCallback.getAndSet(null)?.invoke(false, null, result.message)
             }
         }
     }

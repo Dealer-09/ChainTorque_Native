@@ -37,7 +37,7 @@ class ChainTorqueApplication : Application() {
             optionalMethods = EthUtils.ethOptionalMethods,
             events = EthUtils.ethEvents,
             token = Modal.Model.Token(name = "Sepolia ETH", symbol = "ETH", decimal = 18),
-            rpcUrl = "https://rpc.sepolia.org",
+            rpcUrl = BuildConfig.RPC_URL,
             blockExplorerUrl = "https://sepolia.etherscan.io"
         )
 
