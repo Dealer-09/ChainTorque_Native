@@ -44,11 +44,18 @@ class WalletConnectManager @Inject constructor() {
             // ApprovedSession is a sealed class with WalletConnectSession and CoinbaseSession subtypes
             when (approvedSession) {
                 is Modal.Model.ApprovedSession.WalletConnectSession -> {
-                    val account = approvedSession.accounts.firstOrNull()
+                    Log.d(TAG, "Approved WC accounts=${approvedSession.accounts}")
+                    // Prefer the Sepolia account; fall back to the first granted account.
+                    val account = approvedSession.accounts.firstOrNull { it.contains(":$SEPOLIA_CHAIN_ID:") }
+                        ?: approvedSession.accounts.firstOrNull()
                     if (account != null) {
                         // Account format is "eip155:chainId:address"
                         val addr = account.substringAfterLast(":")
                         val chainPart = account.substringAfter(":").substringBefore(":")
+                        if (chainPart != SEPOLIA_CHAIN_ID) {
+                            Log.w(TAG, "Wallet did NOT grant Sepolia (granted chain=$chainPart). " +
+                                "Transactions will fail until the wallet reconnects on Sepolia.")
+                        }
                         Log.d(TAG, "Connected via WalletConnect: addr=$addr chain=$chainPart")
                         _connectionState.value = WalletConnectionState.Connected(
                             address = addr,
@@ -231,6 +238,33 @@ class WalletConnectManager @Inject constructor() {
     internal fun getConnectedAddress(): String? = try { AppKit.getAccount()?.address } catch (e: Exception) { null }
 
     /**
+     * Returns the exact CAIP-2 chainId (e.g. "eip155:11155111") for Sepolia as it appears in
+     * the current session's namespaces, or null if the session does not authorize Sepolia.
+     * Using the session's own string guarantees a byte-for-byte match with what the wallet
+     * approved. Coinbase sessions expose no namespace map, so we assume the app's pinned chain.
+     */
+    private fun resolveSepoliaChainId(): String? {
+        return try {
+            when (val session = AppKit.getSession()) {
+                is Session.WalletConnectSession -> {
+                    val ns = session.namespaces["eip155"]
+                    val chains = ns?.chains ?: emptyList()
+                    val accounts = ns?.accounts ?: emptyList()
+                    Log.d(TAG, "Session eip155 chains=$chains accounts=$accounts methods=${ns?.methods}")
+                    chains.firstOrNull { it.endsWith(":$SEPOLIA_CHAIN_ID") }
+                        ?: accounts.map { it.substringBeforeLast(":") }
+                            .firstOrNull { it.endsWith(":$SEPOLIA_CHAIN_ID") }
+                }
+                is Session.CoinbaseSession -> "eip155:$SEPOLIA_CHAIN_ID"
+                else -> null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "resolveSepoliaChainId failed: ${e.message}")
+            null
+        }
+    }
+
+    /**
      * Send an eth_sendTransaction request via the WalletConnect relay.
      * The wallet app (MetaMask, etc.) will open for the user to approve.
      */
@@ -253,10 +287,25 @@ class WalletConnectManager @Inject constructor() {
         // JSON-RPC params for eth_sendTransaction
         val txParams = "[{\"from\":\"$fromAddress\",\"to\":\"$toAddress\",\"data\":\"$data\",\"value\":\"$value\"}]"
 
+        // The request MUST carry the exact CAIP-2 chainId the wallet authorized in this
+        // session, otherwise the relay rejects it with "method is not authorized for given
+        // chain". Derive it from the live session so the string matches byte-for-byte.
+        val chainId = resolveSepoliaChainId()
+        if (chainId == null) {
+            val msg = "Wallet isn't on Sepolia. Open your wallet, switch to the Sepolia test " +
+                "network (enable test networks if hidden), then disconnect and reconnect here."
+            Log.e(TAG, msg)
+            pendingTxCallback.set(null)
+            onError(msg)
+            return
+        }
+        Log.d(TAG, "Sending eth_sendTransaction on chainId=$chainId")
+
         // Use the new Request model (not deprecated Modal.Params.Request)
         val request = Request(
             method = "eth_sendTransaction",
             params = txParams,
+            chainId = chainId,
         )
 
         val onSuccessCallback: () -> Unit = {
