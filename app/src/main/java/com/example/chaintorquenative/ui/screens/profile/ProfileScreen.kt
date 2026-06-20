@@ -6,12 +6,16 @@ import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import android.widget.Toast
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -19,6 +23,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.chaintorquenative.mobile.ui.viewmodels.UserProfileViewModel
 import com.example.chaintorquenative.mobile.ui.viewmodels.WalletViewModel
 import com.example.chaintorquenative.ui.components.common.LoadingState
+import com.example.chaintorquenative.ui.screens.profile.components.ActivityList
 import com.example.chaintorquenative.ui.screens.profile.components.ConnectWalletPrompt
 import com.example.chaintorquenative.ui.screens.profile.components.CreatedNFTsGrid
 import com.example.chaintorquenative.ui.screens.profile.components.ProfileHeader
@@ -26,7 +31,7 @@ import com.example.chaintorquenative.ui.screens.profile.components.PurchasedItem
 import com.example.chaintorquenative.ui.screens.profile.components.SoldItemsGrid
 import com.example.chaintorquenative.ui.theme.AppColors
 
-private val tabs = listOf("Purchased", "Created", "Sales")
+private val tabs = listOf("Purchased", "Created", "Sales", "Activity")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,10 +47,22 @@ fun ProfileScreen(
     val userPurchases  by viewModel.userPurchases.observeAsState(emptyList())
     val userNFTs       by viewModel.userNFTs.observeAsState(emptyList())
     val userSales      by viewModel.userSales.observeAsState(emptyList())
+    val userTransactions by viewModel.userTransactions.observeAsState(emptyList())
     val loading        by viewModel.loading.observeAsState(false)
     val isRefreshing   by viewModel.isRefreshing.observeAsState(false)
+    val relisting      by viewModel.relisting.observeAsState(false)
+    val relistMessage  by viewModel.relistMessage.observeAsState()
 
     var selectedTab    by remember { mutableStateOf(0) }
+
+    // Show a toast when a relist completes, then clear it
+    val context = LocalContext.current
+    LaunchedEffect(relistMessage) {
+        relistMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearRelistMessage()
+        }
+    }
 
     // Auto-refresh on resume
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -91,7 +108,7 @@ fun ProfileScreen(
                             )
                         }
                     },
-                    divider = { HorizontalDivider(color = Color.White.copy(alpha = 0.08f)) }
+                    divider = { HorizontalDivider(color = AppColors.OnBg.copy(alpha = 0.08f)) }
                 ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
@@ -101,7 +118,7 @@ fun ProfileScreen(
                                 Text(
                                     text = title,
                                     fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (selectedTab == index) AppColors.Primary else Color.White.copy(alpha = 0.5f)
+                                    color = if (selectedTab == index) AppColors.Primary else AppColors.OnBg.copy(alpha = 0.5f)
                                 )
                             }
                         )
@@ -120,13 +137,41 @@ fun ProfileScreen(
                         when (selectedTab) {
                             0 -> PurchasedItemsGrid(
                                 items   = userPurchases,
-                                onView3D = onNavigateToModelViewer
+                                onView3D = onNavigateToModelViewer,
+                                onResell = { tokenId, newPrice ->
+                                    walletAddress?.let { viewModel.relistItem(tokenId, it, newPrice) }
+                                }
                             )
                             1 -> CreatedNFTsGrid(
                                 items   = userNFTs,
                                 onView3D = onNavigateToModelViewer
                             )
                             2 -> SoldItemsGrid(items = userSales)
+                            3 -> ActivityList(transactions = userTransactions)
+                        }
+                    }
+                }
+            }
+
+            // Relist-in-progress overlay (wallet is signing / syncing)
+            if (relisting) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = AppColors.CardBg)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(color = AppColors.Primary, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Text("Relisting…", color = AppColors.OnBg)
                         }
                     }
                 }

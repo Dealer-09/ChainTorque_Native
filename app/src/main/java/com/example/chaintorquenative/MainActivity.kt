@@ -31,6 +31,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.chaintorquenative.mobile.data.repository.ConfigRepository
 import com.example.chaintorquenative.mobile.ui.viewmodels.WalletViewModel
 import com.example.chaintorquenative.ui.components.BottomNavigationBar
 import com.example.chaintorquenative.ui.screens.marketplace.MarketplaceScreen
@@ -40,6 +41,7 @@ import com.example.chaintorquenative.ui.screens.wallet.WalletScreen
 import com.example.chaintorquenative.ui.screens.settings.SettingsScreen
 import com.example.chaintorquenative.ui.screens.AnimatedSplashScreen
 import com.example.chaintorquenative.ui.theme.ChainTorqueTheme
+import com.example.chaintorquenative.ui.theme.ThemeManager
 import com.google.accompanist.navigation.material.BottomSheetNavigator
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
@@ -48,11 +50,14 @@ import com.reown.appkit.ui.appKitGraph
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "MainActivity"
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var configRepository: ConfigRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,8 +66,17 @@ class MainActivity : ComponentActivity() {
         // Handle WalletConnect deep link on launch
         handleWalletConnectDeepLink(intent)
 
+        // Fetch runtime config (contract address etc.) so a contract redeploy is
+        // picked up without an app rebuild. Non-blocking; falls back to BuildConfig.
+        lifecycleScope.launch { configRepository.loadConfig() }
+
+        // Load the saved dark/light preference before first composition.
+        ThemeManager.load(this)
+
         setContent {
-            ChainTorqueTheme {
+            // Reading ThemeManager.isDark (snapshot state) here means toggling it
+            // from Settings recomposes the whole app into the other theme.
+            ChainTorqueTheme(darkTheme = ThemeManager.isDark) {
                 ChainTorqueAppWithSplash()
             }
         }

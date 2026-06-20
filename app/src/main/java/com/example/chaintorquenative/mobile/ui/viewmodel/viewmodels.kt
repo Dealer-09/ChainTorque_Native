@@ -4,10 +4,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.chaintorquenative.BuildConfig
 import com.example.chaintorquenative.mobile.data.api.MarketplaceItem
+import com.example.chaintorquenative.mobile.data.api.TransactionRecord
 import com.example.chaintorquenative.mobile.data.api.UserNFT
 import com.example.chaintorquenative.mobile.data.api.UserProfile
+import com.example.chaintorquenative.mobile.data.config.AppConfig
 import com.example.chaintorquenative.mobile.data.repository.MarketplaceRepository
 import com.example.chaintorquenative.mobile.data.repository.UserRepository
 import com.example.chaintorquenative.mobile.data.repository.Web3Repository
@@ -75,7 +76,9 @@ class MarketplaceViewModel @Inject constructor(
         _filteredItems.value = items.filter { item ->
             val matchSearch = query.isBlank() ||
                     item.title?.contains(query, ignoreCase = true) == true ||
-                    item.description?.contains(query, ignoreCase = true) == true
+                    item.description?.contains(query, ignoreCase = true) == true ||
+                    item.category?.contains(query, ignoreCase = true) == true ||
+                    item.username?.contains(query, ignoreCase = true) == true
             val matchCat = category == "All" || item.category.equals(category, ignoreCase = true)
             matchSearch && matchCat
         }
@@ -115,7 +118,7 @@ class MarketplaceViewModel @Inject constructor(
 
             walletConnectManager.sendTransaction(
                 fromAddress = buyerAddress,
-                toAddress   = BuildConfig.CONTRACT_ADDRESS,
+                toAddress   = AppConfig.contractAddress,
                 data        = data,
                 value       = valueHex,
                 onSuccess   = { txHash ->
@@ -143,7 +146,9 @@ class MarketplaceViewModel @Inject constructor(
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val web3Repository: Web3Repository
+    private val web3Repository: Web3Repository,
+    private val marketplaceRepository: MarketplaceRepository,
+    private val walletConnectManager: WalletConnectManager
 ) : ViewModel() {
 
     private val _userProfile   = MutableLiveData<UserProfile?>()
@@ -160,6 +165,10 @@ class UserProfileViewModel @Inject constructor(
     private val _userSales = MutableLiveData<List<MarketplaceItem>>(emptyList())
     val userSales: LiveData<List<MarketplaceItem>> = _userSales
 
+    // Full transaction history (mints, purchases, sales, relists)
+    private val _userTransactions = MutableLiveData<List<TransactionRecord>>(emptyList())
+    val userTransactions: LiveData<List<TransactionRecord>> = _userTransactions
+
     private val _loading     = MutableLiveData<Boolean>()
     val loading: LiveData<Boolean> = _loading
 
@@ -168,6 +177,13 @@ class UserProfileViewModel @Inject constructor(
 
     private val _isRefreshing = MutableLiveData(false)
     val isRefreshing: LiveData<Boolean> = _isRefreshing
+
+    // Relist (resell) state
+    private val _relisting = MutableLiveData(false)
+    val relisting: LiveData<Boolean> = _relisting
+
+    private val _relistMessage = MutableLiveData<String?>()
+    val relistMessage: LiveData<String?> = _relistMessage
 
     private var currentAddress: String? = null
 
@@ -205,10 +221,16 @@ class UserProfileViewModel @Inject constructor(
                     .onSuccess { _userSales.postValue(it) }
                     .onFailure { android.util.Log.w("UserProfileVM", "sales: ${it.message}") }
             }
+            val txJob = launch {
+                userRepository.getUserTransactions(address)
+                    .onSuccess { _userTransactions.postValue(it) }
+                    .onFailure { android.util.Log.w("UserProfileVM", "transactions: ${it.message}") }
+            }
 
             purchasesJob.join()
             nftsJob.join()
             salesJob.join()
+            txJob.join()
 
             _loading.value     = false
             _isRefreshing.value = false
@@ -219,7 +241,55 @@ class UserProfileViewModel @Inject constructor(
         currentAddress?.let { _isRefreshing.value = true; loadUserData(it) }
     }
 
+    /**
+     * Re-lists an owned NFT back onto the marketplace at [newPriceEth].
+     * Calls relistToken(uint256,uint128) on-chain (paying the listing fee), then
+     * syncs the relist to the backend. Mirrors the purchase signing flow.
+     */
+    fun relistItem(tokenId: Int, sellerAddress: String, newPriceEth: Double) {
+        if (newPriceEth <= 0.0) { _error.value = "Enter a price greater than 0"; return }
+        viewModelScope.launch {
+            _relisting.value = true
+            _error.value     = null
+
+            val selector      = "0x417c7275"              // relistToken(uint256,uint128)
+            val paddedTokenId = "%064x".format(tokenId)
+            val priceWei      = java.math.BigDecimal(newPriceEth).multiply(java.math.BigDecimal.TEN.pow(18)).toBigInteger()
+            val paddedPrice   = "%064x".format(priceWei)
+            val data          = selector + paddedTokenId + paddedPrice
+
+            android.util.Log.d("UserProfileVM", "relistItem token=$tokenId price=$newPriceEth seller=$sellerAddress")
+
+            walletConnectManager.sendTransaction(
+                fromAddress = sellerAddress,
+                toAddress   = AppConfig.contractAddress,
+                data        = data,
+                value       = AppConfig.listingPriceWeiHex(),  // listing fee, not the sale price
+                onSuccess   = { txHash ->
+                    android.util.Log.d("UserProfileVM", "Relist success tx=$txHash")
+                    viewModelScope.launch {
+                        marketplaceRepository.syncRelist(tokenId, txHash, sellerAddress, newPriceEth.toString())
+                            .onSuccess {
+                                _relistMessage.postValue("Listed for $newPriceEth ETH")
+                                loadUserData(sellerAddress)
+                            }
+                            .onFailure {
+                                _relistMessage.postValue("Relisted on-chain — sync pending")
+                                android.util.Log.e("UserProfileVM", "Relist sync failed: ${it.message}")
+                            }
+                        _relisting.postValue(false)
+                    }
+                },
+                onError = { msg ->
+                    _error.postValue("Relist failed: $msg")
+                    _relisting.postValue(false)
+                }
+            )
+        }
+    }
+
     fun clearError() { _error.value = null }
+    fun clearRelistMessage() { _relistMessage.value = null }
 }
 
 // =============================================================================

@@ -33,12 +33,12 @@ fun SoldItemsGrid(items: List<MarketplaceItem>) {
                 Text(
                     text = "No sales yet",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.5f)
+                    color = AppColors.OnBg.copy(alpha = 0.5f)
                 )
                 Text(
                     text = "Items you sell will appear here",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.35f)
+                    color = AppColors.OnBg.copy(alpha = 0.35f)
                 )
             }
         }
@@ -61,20 +61,20 @@ fun SoldItemsGrid(items: List<MarketplaceItem>) {
                         Text(
                             text = "Total Sales",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color.White.copy(alpha = 0.6f)
+                            color = AppColors.OnBg.copy(alpha = 0.6f)
                         )
                         Text(
                             text = "${items.size} item${if (items.size != 1) "s" else ""}",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = AppColors.OnBg
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "Revenue",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color.White.copy(alpha = 0.6f)
+                            color = AppColors.OnBg.copy(alpha = 0.6f)
                         )
                         Text(
                             text = "${"%.4f".format(items.sumOf { it.getDisplayPrice() })} ETH",
@@ -132,7 +132,7 @@ fun SoldItemCard(item: MarketplaceItem) {
                         text = "Sold",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                        color = Color.White, // sits on the filled red badge
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -150,7 +150,7 @@ fun SoldItemCard(item: MarketplaceItem) {
                             text = "#$id",
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White
+                            color = Color.White // sits on the dark image scrim
                         )
                     }
                 }
@@ -162,7 +162,7 @@ fun SoldItemCard(item: MarketplaceItem) {
                     text = item.title ?: "Untitled",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = AppColors.OnBg,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -180,7 +180,7 @@ fun SoldItemCard(item: MarketplaceItem) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = Color.White.copy(alpha = 0.05f)
+                        color = AppColors.OnBg.copy(alpha = 0.05f)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
@@ -189,7 +189,7 @@ fun SoldItemCard(item: MarketplaceItem) {
                             Icon(
                                 Icons.Filled.Receipt,
                                 contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.4f),
+                                tint = AppColors.OnBg.copy(alpha = 0.4f),
                                 modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -197,7 +197,7 @@ fun SoldItemCard(item: MarketplaceItem) {
                             Text(
                                 text = "${hash.take(6)}...${hash.takeLast(4)}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.5f),
+                                color = AppColors.OnBg.copy(alpha = 0.5f),
                                 maxLines = 1
                             )
                         }
@@ -210,7 +210,7 @@ fun SoldItemCard(item: MarketplaceItem) {
                     Text(
                         text = "Buyer: ${item.owner!!.take(6)}...${item.owner!!.takeLast(4)}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.4f),
+                        color = AppColors.OnBg.copy(alpha = 0.4f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

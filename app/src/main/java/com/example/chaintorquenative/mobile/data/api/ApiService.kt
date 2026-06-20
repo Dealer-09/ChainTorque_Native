@@ -94,6 +94,38 @@ data class SyncPurchaseRequest(
     val price: String
 )
 
+data class SyncRelistRequest(
+    val tokenId: Int,
+    val transactionHash: String,
+    val sellerAddress: String,
+    val price: String
+)
+
+// Runtime config from GET /api/config (flat object, not wrapped in ApiResponse)
+data class AppConfigResponse(
+    val success: Boolean = false,
+    val contractAddress: String? = null,
+    val chainId: Long? = null,
+    val listingPrice: String? = null,
+    val network: String? = null
+)
+
+// A single entry in the user's transaction history
+data class TransactionRecord(
+    val transactionHash: String? = null,
+    val tokenId: Int? = null,
+    val type: String? = null,        // mint | purchase | sale | relist | listing | transfer
+    val price: Double? = null,
+    val currency: String? = null,
+    val buyer: String? = null,
+    val seller: String? = null,
+    val creator: String? = null,
+    val status: String? = null,
+    val createdAt: String? = null,
+    val title: String? = null,
+    val imageUrl: String? = null
+)
+
 // Retrofit API Interface
 interface ChainTorqueApiService {
 
@@ -114,10 +146,21 @@ interface ChainTorqueApiService {
     @GET("api/user/{address}/sales")
     suspend fun getUserSales(@Path("address") address: String): Response<ApiResponse<List<MarketplaceItem>>>
 
+    @GET("api/user/{address}/transactions")
+    suspend fun getUserTransactions(@Path("address") address: String): Response<ApiResponse<List<TransactionRecord>>>
+
     @POST("api/user/register")
     suspend fun registerUser(@Body request: Map<String, String>): Response<ApiResponse<UserProfile>>
 
     // Sync purchase after blockchain transaction
     @POST("api/marketplace/sync-purchase")
     suspend fun syncPurchase(@Body request: SyncPurchaseRequest): Response<ApiResponse<MarketplaceItem>>
+
+    // Sync relist after blockchain transaction
+    @POST("api/marketplace/sync-relist")
+    suspend fun syncRelist(@Body request: SyncRelistRequest): Response<ApiResponse<MarketplaceItem>>
+
+    // Runtime app config (contract address, chain, listing price)
+    @GET("api/config")
+    suspend fun getConfig(): Response<AppConfigResponse>
 }

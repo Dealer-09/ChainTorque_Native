@@ -29,7 +29,7 @@ fun LoadingState(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Loading...",
-                color = Color.White.copy(alpha = 0.7f)
+                color = AppColors.OnBg.copy(alpha = 0.7f)
             )
         }
     }
@@ -55,7 +55,7 @@ fun ErrorState(
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = message,
-                color = Color.White.copy(alpha = 0.7f),
+                color = AppColors.OnBg.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -79,14 +79,14 @@ fun EmptyState(message: String, modifier: Modifier = Modifier) {
             Icon(
                 Icons.Outlined.Inventory2,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.3f),
+                tint = AppColors.OnBg.copy(alpha = 0.3f),
                 modifier = Modifier.size(64.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.5f)
+                color = AppColors.OnBg.copy(alpha = 0.5f)
             )
         }
     }

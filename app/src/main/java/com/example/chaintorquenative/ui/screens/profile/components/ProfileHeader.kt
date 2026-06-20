@@ -38,7 +38,7 @@ fun ProfileHeader(address: String, balance: String) {
                 Icon(
                     Icons.Filled.Person,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = AppColors.OnAccent, // icon sits on the accent-filled avatar
                     modifier = Modifier.size(30.dp)
                 )
             }
@@ -50,12 +50,12 @@ fun ProfileHeader(address: String, balance: String) {
                     text = "My Profile",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = AppColors.OnBg
                 )
                 Text(
                     text = "${address.take(6)}...${address.takeLast(4)}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = AppColors.OnBg.copy(alpha = 0.7f)
                 )
                 if (balance.isNotEmpty()) {
                     Text(

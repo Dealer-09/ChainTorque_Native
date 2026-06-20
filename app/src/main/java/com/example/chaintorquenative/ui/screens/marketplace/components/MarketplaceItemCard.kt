@@ -47,14 +47,14 @@ fun MarketplaceSearchBar(
         placeholder = {
             Text(
                 "Search 3D models, CAD files...",
-                color = Color.White.copy(alpha = 0.5f)
+                color = AppColors.OnBg.copy(alpha = 0.5f)
             )
         },
         leadingIcon = {
             Icon(
                 Icons.Filled.Search,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.7f)
+                tint = AppColors.OnBg.copy(alpha = 0.7f)
             )
         },
         trailingIcon = {
@@ -63,16 +63,16 @@ fun MarketplaceSearchBar(
                     Icon(
                         Icons.Filled.Clear,
                         contentDescription = "Clear",
-                        tint = Color.White.copy(alpha = 0.7f)
+                        tint = AppColors.OnBg.copy(alpha = 0.7f)
                     )
                 }
             }
         },
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
+            focusedTextColor = AppColors.OnBg,
+            unfocusedTextColor = AppColors.OnBg,
             focusedBorderColor = AppColors.Primary,
-            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+            unfocusedBorderColor = AppColors.OnBg.copy(alpha = 0.2f),
             cursorColor = AppColors.Primary,
             focusedContainerColor = AppColors.CardBg,
             unfocusedContainerColor = AppColors.CardBg
@@ -110,12 +110,12 @@ fun CategoryChips(
                 },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = AppColors.Primary,
-                    selectedLabelColor = Color.White,
+                    selectedLabelColor = AppColors.OnAccent, // label sits on the accent-filled selected chip
                     containerColor = AppColors.CardBg,
-                    labelColor = Color.White.copy(alpha = 0.8f)
+                    labelColor = AppColors.OnBg.copy(alpha = 0.8f)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
-                    borderColor = Color.White.copy(alpha = 0.1f),
+                    borderColor = AppColors.OnBg.copy(alpha = 0.1f),
                     selectedBorderColor = AppColors.Primary,
                     enabled = true,
                     selected = selectedCategory == name
@@ -202,7 +202,7 @@ fun MarketplaceItemCard(
                         text = item.format ?: "GLB",
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White
+                        color = Color.White // sits on the dark image scrim, stays white in both themes
                     )
                 }
             }
@@ -212,7 +212,7 @@ fun MarketplaceItemCard(
                     text = item.title ?: "Untitled",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = AppColors.OnBg,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -227,21 +227,21 @@ fun MarketplaceItemCard(
                     Text(
                         text = item.getShortSeller(),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.6f),
+                        color = AppColors.OnBg.copy(alpha = 0.6f),
                         maxLines = 1
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Outlined.Visibility,
                             contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.5f),
+                            tint = AppColors.OnBg.copy(alpha = 0.5f),
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
                             text = "${item.views ?: 0}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = AppColors.OnBg.copy(alpha = 0.8f)
                         )
                     }
                 }
@@ -263,14 +263,14 @@ fun MarketplaceItemCard(
                         Icon(
                             Icons.Outlined.Favorite,
                             contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.5f),
+                            tint = AppColors.OnBg.copy(alpha = 0.5f),
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
                             text = "${item.likes ?: 0}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.5f)
+                            color = AppColors.OnBg.copy(alpha = 0.5f)
                         )
                     }
                 }

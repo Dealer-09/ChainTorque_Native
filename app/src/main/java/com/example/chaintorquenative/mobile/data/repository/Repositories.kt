@@ -3,6 +3,7 @@ package com.example.chaintorquenative.mobile.data.repository
 import android.util.Log
 import com.example.chaintorquenative.BuildConfig
 import com.example.chaintorquenative.mobile.data.api.*
+import com.example.chaintorquenative.mobile.data.config.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -44,6 +45,18 @@ class MarketplaceRepository @Inject constructor(
         r.body()?.takeIf { r.isSuccessful && it.success }?.data
             ?: throw Exception(r.body()?.error ?: "API ${r.code()}")
     }
+
+    suspend fun syncRelist(
+        tokenId: Int,
+        transactionHash: String,
+        sellerAddress: String,
+        price: String
+    ): Result<MarketplaceItem> = runCatching {
+        val req = SyncRelistRequest(tokenId, transactionHash, sellerAddress, price)
+        val r = apiService.syncRelist(req)
+        r.body()?.takeIf { r.isSuccessful && it.success }?.data
+            ?: throw Exception(r.body()?.error ?: "API ${r.code()}")
+    }
 }
 
 // ─── User Repository ──────────────────────────────────────────────────────────
@@ -70,10 +83,43 @@ class UserRepository @Inject constructor(
             ?: throw Exception(r.body()?.error ?: "API ${r.code()}")
     }
 
+    suspend fun getUserTransactions(address: String): Result<List<TransactionRecord>> = runCatching {
+        val r = apiService.getUserTransactions(address)
+        r.body()?.takeIf { r.isSuccessful && it.success }?.data
+            ?: throw Exception(r.body()?.error ?: "API ${r.code()}")
+    }
+
     suspend fun registerUser(walletAddress: String): Result<UserProfile> = runCatching {
         val r = apiService.registerUser(mapOf("walletAddress" to walletAddress))
         r.body()?.takeIf { r.isSuccessful && it.success }?.data
             ?: throw Exception(r.body()?.error ?: "API ${r.code()}")
+    }
+}
+
+// ─── Config Repository ────────────────────────────────────────────────────────
+
+/**
+ * Fetches runtime config (contract address, chain, listing price) from the backend
+ * and applies it to [AppConfig]. Called once on app launch. Any failure is non-fatal —
+ * the app keeps the compiled-in BuildConfig defaults.
+ */
+@Singleton
+class ConfigRepository @Inject constructor(
+    private val apiService: ChainTorqueApiService
+) {
+    suspend fun loadConfig() {
+        runCatching {
+            val r = apiService.getConfig()
+            val body = r.body()
+            if (r.isSuccessful && body != null && body.success) {
+                AppConfig.update(body.contractAddress, body.chainId, body.listingPrice)
+                Log.d("ConfigRepository", "Config loaded: contract=${AppConfig.contractAddress} chain=${AppConfig.chainId} fee=${AppConfig.listingPriceEth}")
+            } else {
+                Log.w("ConfigRepository", "Config response not OK (${r.code()}); using BuildConfig defaults")
+            }
+        }.onFailure {
+            Log.w("ConfigRepository", "Config fetch failed; using BuildConfig defaults: ${it.message}")
+        }
     }
 }
 

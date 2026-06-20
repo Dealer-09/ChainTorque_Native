@@ -50,7 +50,7 @@ fun ConnectWalletPrompt(onConnectWallet: () -> Unit) {
             text = "Connect Your Wallet",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = AppColors.OnBg
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -58,7 +58,7 @@ fun ConnectWalletPrompt(onConnectWallet: () -> Unit) {
         Text(
             text = "Connect your wallet to view your profile, owned NFTs, and purchase history.",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.7f),
+            color = AppColors.OnBg.copy(alpha = 0.7f),
             modifier = Modifier.padding(horizontal = 16.dp),
             textAlign = TextAlign.Center
         )

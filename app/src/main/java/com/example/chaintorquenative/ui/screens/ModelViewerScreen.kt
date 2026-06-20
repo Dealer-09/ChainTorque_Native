@@ -44,17 +44,17 @@ fun ModelViewerScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(title, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
+                        Text(title, fontWeight = FontWeight.SemiBold, color = AppColors.OnBg, maxLines = 1)
                         Text(
                             text = "Pinch to zoom  •  Drag to rotate",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.45f)
+                            color = AppColors.OnBg.copy(alpha = 0.45f)
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = AppColors.OnBg)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AppColors.CardBg)
@@ -70,14 +70,14 @@ fun ModelViewerScreen(
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(Icons.Filled.ViewInAr, contentDescription = "3D Viewer", tint = Color.White, modifier = Modifier.size(64.dp))
+                            Icon(Icons.Filled.ViewInAr, contentDescription = "3D Viewer", tint = AppColors.OnBg, modifier = Modifier.size(64.dp))
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("Ready to View", style = MaterialTheme.typography.titleLarge, color = Color.White)
+                            Text("Ready to View", style = MaterialTheme.typography.titleLarge, color = AppColors.OnBg)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Launch the 3D viewer to see this model in 3D or AR.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = AppColors.OnBg.copy(alpha = 0.7f),
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(32.dp))
@@ -151,8 +151,8 @@ fun ModelViewerScreen(
 @Composable
 private fun HintChip(gesture: String, action: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(gesture, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.75f))
-        Text(action, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.4f))
+        Text(gesture, style = MaterialTheme.typography.labelSmall, color = AppColors.OnBg.copy(alpha = 0.75f))
+        Text(action, style = MaterialTheme.typography.labelSmall, color = AppColors.OnBg.copy(alpha = 0.4f))
     }
 }
 
@@ -162,9 +162,9 @@ private fun NoModelPlaceholder() {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
             Text("📦", style = MaterialTheme.typography.displayMedium)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("No 3D model available", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.8f))
+            Text("No 3D model available", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = AppColors.OnBg.copy(alpha = 0.8f))
             Spacer(modifier = Modifier.height(8.dp))
-            Text("This listing does not have\na 3D model file attached.", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.4f), textAlign = TextAlign.Center)
+            Text("This listing does not have\na 3D model file attached.", style = MaterialTheme.typography.bodyMedium, color = AppColors.OnBg.copy(alpha = 0.4f), textAlign = TextAlign.Center)
         }
     }
 }

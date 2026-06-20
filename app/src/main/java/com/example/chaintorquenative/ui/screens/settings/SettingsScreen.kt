@@ -15,15 +15,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.chaintorquenative.BuildConfig
 import com.example.chaintorquenative.ui.theme.AppColors
+import com.example.chaintorquenative.ui.theme.ThemeManager
 
 @Composable
 fun SettingsScreen() {
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
@@ -40,22 +43,28 @@ fun SettingsScreen() {
                 text = "Settings",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = AppColors.OnBg
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // ── Appearance ───────────────────────────────────────────────────
+            SettingsSection(title = "Appearance") {
+                SettingsToggle(
+                    icon = Icons.Filled.DarkMode,
+                    title = "Dark Mode",
+                    subtitle = if (ThemeManager.isDark) "On" else "Off",
+                    checked = ThemeManager.isDark,
+                    onCheckedChange = { ThemeManager.setDark(context, it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // ── About (static info, no chevron) ──────────────────────────────
             SettingsSection(title = "About") {
-                SettingsItem(icon = Icons.Filled.Info,  title = "App Version", subtitle = "1.0.0")
+                SettingsItem(icon = Icons.Filled.Info,  title = "App Version", subtitle = "1.4")
                 SettingsItem(icon = Icons.Filled.Code,  title = "Network",     subtitle = "Ethereum Sepolia Testnet")
-                SettingsItem(
-                    icon = Icons.Filled.Cloud,
-                    title = "Backend",
-                    subtitle = "chaintorque-backend.onrender.com",
-                    url = "https://chaintorque-backend.onrender.com",
-                    onOpen = { uriHandler.openUri(it) }
-                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -65,22 +74,8 @@ fun SettingsScreen() {
                 SettingsItem(
                     icon = Icons.Filled.Language,
                     title = "Website",
-                    subtitle = "chaintorque.com",
-                    url = "https://chaintorque.com",
-                    onOpen = { uriHandler.openUri(it) }
-                )
-                SettingsItem(
-                    icon = Icons.Filled.Description,
-                    title = "Terms of Service",
-                    subtitle = "Read our terms",
-                    url = "https://chaintorque.com/terms",
-                    onOpen = { uriHandler.openUri(it) }
-                )
-                SettingsItem(
-                    icon = Icons.Filled.PrivacyTip,
-                    title = "Privacy Policy",
-                    subtitle = "How we handle your data",
-                    url = "https://chaintorque.com/privacy",
+                    subtitle = "chaintorque-landing.onrender.com",
+                    url = "https://chaintorque-landing.onrender.com",
                     onOpen = { uriHandler.openUri(it) }
                 )
             }
@@ -143,15 +138,51 @@ private fun SettingsItem(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = null, tint = AppColors.OnBg.copy(alpha = 0.7f), modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title,    style = MaterialTheme.typography.bodyLarge,  fontWeight = FontWeight.Medium, color = Color.White)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
+            Text(title,    style = MaterialTheme.typography.bodyLarge,  fontWeight = FontWeight.Medium, color = AppColors.OnBg)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AppColors.OnBg.copy(alpha = 0.6f))
         }
         // Only show arrow for tappable rows
         if (isClickable) {
-            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.4f))
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = AppColors.OnBg.copy(alpha = 0.4f))
         }
+    }
+}
+
+// ─── Toggle Row ───────────────────────────────────────────────────────────────
+
+@Composable
+private fun SettingsToggle(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = AppColors.OnBg.copy(alpha = 0.7f), modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title,    style = MaterialTheme.typography.bodyLarge,  fontWeight = FontWeight.Medium, color = AppColors.OnBg)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AppColors.OnBg.copy(alpha = 0.6f))
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = AppColors.OnAccent,
+                checkedTrackColor = AppColors.Primary,
+                uncheckedThumbColor = AppColors.OnBgMuted,
+                uncheckedTrackColor = AppColors.CardBg,
+                uncheckedBorderColor = AppColors.Border
+            )
+        )
     }
 }

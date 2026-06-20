@@ -1,59 +1,56 @@
 package com.example.chaintorquenative.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 
-// ChainTorque Brand Colors
-private val Primary = Color(0xFF6366F1) // Indigo
-private val Secondary = Color(0xFF8B5CF6) // Purple
-private val Tertiary = Color(0xFF03DAC6) // Teal
-private val Background = Color(0xFF0F172A) // Slate 900
-private val Surface = Color(0xFF1E293B) // Slate 800
-private val OnPrimary = Color.White
-private val OnSecondary = Color.White
-private val OnBackground = Color.White
-private val OnSurface = Color.White
-private val Error = Color(0xFFEF4444)
+// Minimalist black & white. The Material color scheme is derived from the same
+// monochrome palette as AppColors, so built-in components (TopAppBar, Surface,
+// Switch, Button content color, …) invert correctly between dark and light.
+// onPrimary is the inverse of primary, so filled accent buttons never render
+// same-on-same (e.g. white button → black label in dark mode).
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Primary,
-    secondary = Secondary,
-    tertiary = Tertiary,
-    background = Background,
-    surface = Surface,
-    onPrimary = OnPrimary,
-    onSecondary = OnSecondary,
-    onBackground = OnBackground,
-    onSurface = OnSurface,
-    error = Error
+private fun darkScheme() = darkColorScheme(
+    primary       = Color(0xFFFFFFFF),
+    onPrimary     = Color(0xFF000000),
+    secondary     = Color(0xFFFFFFFF),
+    onSecondary   = Color(0xFF000000),
+    background    = Color(0xFF000000),
+    onBackground  = Color(0xFFFFFFFF),
+    surface       = Color(0xFF141414),
+    onSurface     = Color(0xFFFFFFFF),
+    outline       = Color(0xFF262626),
+    error         = Color(0xFFFFFFFF),
+    onError       = Color(0xFF000000),
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Primary,
-    secondary = Secondary,
-    tertiary = Tertiary,
-    background = Color(0xFFF8FAFC),
-    surface = Color.White,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onBackground = Color(0xFF0F172A),
-    onSurface = Color(0xFF0F172A),
-    error = Error
+private fun lightScheme() = lightColorScheme(
+    primary       = Color(0xFF000000),
+    onPrimary     = Color(0xFFFFFFFF),
+    secondary     = Color(0xFF000000),
+    onSecondary   = Color(0xFFFFFFFF),
+    background    = Color(0xFFFFFFFF),
+    onBackground  = Color(0xFF000000),
+    surface       = Color(0xFFFFFFFF),
+    onSurface     = Color(0xFF000000),
+    outline       = Color(0xFFE2E2E2),
+    error         = Color(0xFF000000),
+    onError       = Color(0xFFFFFFFF),
 )
 
 @Composable
 fun ChainTorqueTheme(
-    darkTheme: Boolean = true, // Default to dark theme to match web
+    darkTheme: Boolean = true, // dark by default; toggled via ThemeManager
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    // Keep the custom AppColors palette in lock-step with the Material scheme.
+    SideEffect { AppColors.setDark(darkTheme) }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = if (darkTheme) darkScheme() else lightScheme(),
         content = content
     )
 }

@@ -33,12 +33,12 @@ fun MarketplaceHeader() {
                         text = "ChainTorque",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = AppColors.OnBg
                     )
                     Text(
                         text = "Premium CAD Marketplace",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = AppColors.OnBg.copy(alpha = 0.7f)
                     )
                 }
 

@@ -36,12 +36,12 @@ fun CreatedNFTsGrid(
                 Text(
                     text = "No created NFTs yet",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.5f)
+                    color = AppColors.OnBg.copy(alpha = 0.5f)
                 )
                 Text(
                     text = "Mint your 3D models on the web marketplace",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.35f)
+                    color = AppColors.OnBg.copy(alpha = 0.35f)
                 )
             }
         }
@@ -96,7 +96,7 @@ fun CreatedNFTCard(
                         text = if (isSold) "Sold" else "Listed",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                        color = Color.White, // sits on the filled gray/green status badge
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -114,7 +114,7 @@ fun CreatedNFTCard(
                             text = "#$id",
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White
+                            color = Color.White // sits on the dark image scrim
                         )
                     }
                 }
@@ -125,7 +125,7 @@ fun CreatedNFTCard(
                     text = nft.title ?: "Untitled",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = AppColors.OnBg,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -165,7 +165,7 @@ fun CreatedNFTCard(
                             text = "Sold",
                             modifier = Modifier.padding(vertical = 8.dp),
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color.White.copy(alpha = 0.5f),
+                            color = AppColors.OnBg.copy(alpha = 0.5f),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }

@@ -41,8 +41,8 @@ fun ItemDetailSheet(
         AlertDialog(
             onDismissRequest = { showConfirmation = false },
             containerColor = AppColors.CardBg,
-            titleContentColor = Color.White,
-            textContentColor = Color.White,
+            titleContentColor = AppColors.OnBg,
+            textContentColor = AppColors.OnBg,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -60,14 +60,14 @@ fun ItemDetailSheet(
                     // Item summary
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = Color.White.copy(alpha = 0.05f)
+                        color = AppColors.OnBg.copy(alpha = 0.05f)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(
                                 text = item.title ?: "Untitled",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White
+                                color = AppColors.OnBg
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
@@ -86,14 +86,14 @@ fun ItemDetailSheet(
                         Icon(
                             Icons.Filled.Code,
                             contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.4f),
+                            tint = AppColors.OnBg.copy(alpha = 0.4f),
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Contract: $shortContract",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.5f)
+                            color = AppColors.OnBg.copy(alpha = 0.5f)
                         )
                     }
 
@@ -121,7 +121,7 @@ fun ItemDetailSheet(
                         Text(
                             text = "From: ${addr.take(6)}...${addr.takeLast(4)}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.4f)
+                            color = AppColors.OnBg.copy(alpha = 0.4f)
                         )
                     }
                 }
@@ -144,8 +144,8 @@ fun ItemDetailSheet(
                 OutlinedButton(
                     onClick = { showConfirmation = false },
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.OnBg),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.OnBg.copy(alpha = 0.3f))
                 ) {
                     Text("Cancel")
                 }
@@ -157,7 +157,7 @@ fun ItemDetailSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = AppColors.CardBg,
-        contentColor = Color.White
+        contentColor = AppColors.OnBg
     ) {
         Column(
             modifier = Modifier
@@ -184,7 +184,7 @@ fun ItemDetailSheet(
                 text = item.title ?: "Untitled",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = AppColors.OnBg
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -194,14 +194,14 @@ fun ItemDetailSheet(
                 Icon(
                     Icons.Filled.Person,
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.7f),
+                    tint = AppColors.OnBg.copy(alpha = 0.7f),
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "by ${item.getShortSeller()}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = AppColors.OnBg.copy(alpha = 0.7f)
                 )
             }
 
@@ -211,7 +211,7 @@ fun ItemDetailSheet(
             Text(
                 text = item.description ?: "No description available",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f)
+                color = AppColors.OnBg.copy(alpha = 0.8f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -254,7 +254,7 @@ fun ItemDetailSheet(
                     Text(
                         text = "Price",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.6f)
+                        color = AppColors.OnBg.copy(alpha = 0.6f)
                     )
                     Text(
                         text = "${item.getDisplayPrice()} ETH",
@@ -300,9 +300,9 @@ fun ItemDetailSheet(
 @Composable
 fun StatItem(icon: ImageVector, value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = AppColors.OnBg.copy(alpha = 0.6f), modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.5f))
+        Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = AppColors.OnBg)
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = AppColors.OnBg.copy(alpha = 0.5f))
     }
 }

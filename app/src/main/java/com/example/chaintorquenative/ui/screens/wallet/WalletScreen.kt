@@ -103,7 +103,7 @@ fun WalletScreen(
                         WalletViewModel.ConnectionStatus.CONNECTED   -> AppColors.Success
                         WalletViewModel.ConnectionStatus.CONNECTING  -> AppColors.Warning
                         WalletViewModel.ConnectionStatus.ERROR       -> Color.Red
-                        else                                         -> Color.White
+                        else                                         -> AppColors.OnBg
                     }
                 )
 
@@ -125,7 +125,7 @@ fun WalletScreen(
                         enabled = !loading
                     ) {
                         if (loading) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White) // on the fixed-blue WalletConnect button
                         } else {
                             Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
@@ -137,7 +137,7 @@ fun WalletScreen(
                     Text(
                         text = "MetaMask, Trust Wallet, Rainbow & more",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.5f)
+                        color = AppColors.OnBg.copy(alpha = 0.5f)
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -151,8 +151,8 @@ fun WalletScreen(
                             Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(AppColors.Success))
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text("Network", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
-                                Text("Ethereum Sepolia Testnet", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = Color.White)
+                                Text("Network", style = MaterialTheme.typography.labelSmall, color = AppColors.OnBg.copy(alpha = 0.6f))
+                                Text("Ethereum Sepolia Testnet", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AppColors.OnBg)
                             }
                         }
                     }
@@ -171,7 +171,7 @@ fun WalletScreen(
                             Text(
                                 text = "Connects securely via WalletConnect. Your wallet app will open for approval.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.7f)
+                                color = AppColors.OnBg.copy(alpha = 0.7f)
                             )
                         }
                     }
@@ -183,15 +183,15 @@ fun WalletScreen(
                         colors = CardDefaults.cardColors(containerColor = AppColors.CardBg)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
-                            Text("Wallet Address", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.6f))
+                            Text("Wallet Address", style = MaterialTheme.typography.labelMedium, color = AppColors.OnBg.copy(alpha = 0.6f))
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(walletAddress ?: "", style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.Medium)
+                            Text(walletAddress ?: "", style = MaterialTheme.typography.bodyMedium, color = AppColors.OnBg, fontWeight = FontWeight.Medium)
 
                             Spacer(modifier = Modifier.height(16.dp))
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                            HorizontalDivider(color = AppColors.OnBg.copy(alpha = 0.1f))
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            Text("Balance", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.6f))
+                            Text("Balance", style = MaterialTheme.typography.labelMedium, color = AppColors.OnBg.copy(alpha = 0.6f))
                             Text(
                                 text = if (balance.isNotEmpty()) "$balance ETH" else "Loading...",
                                 style = MaterialTheme.typography.headlineSmall,

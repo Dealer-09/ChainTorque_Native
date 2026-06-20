@@ -22,7 +22,7 @@ fun BottomNavigationBar(
 ) {
     NavigationBar(
         containerColor = AppColors.CardBg,
-        contentColor = Color.White
+        contentColor = AppColors.OnBg
     ) {
         val items = listOf(
             BottomNavItem(Screen.MARKETPLACE, Icons.Default.Home, "Marketplace"),
@@ -40,8 +40,8 @@ fun BottomNavigationBar(
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = AppColors.Primary,
                     selectedTextColor = AppColors.Primary,
-                    unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                    unselectedTextColor = Color.White.copy(alpha = 0.6f),
+                    unselectedIconColor = AppColors.OnBg.copy(alpha = 0.6f),
+                    unselectedTextColor = AppColors.OnBg.copy(alpha = 0.6f),
                     indicatorColor = AppColors.Primary.copy(alpha = 0.1f)
                 )
             )
