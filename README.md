@@ -6,10 +6,13 @@ A native Android application for browsing, purchasing, and managing NFT-based CA
 
 ## Features
 
-- **NFT Marketplace** - Browse and purchase premium 3D CAD assets
+- **NFT Marketplace** - Browse, search (by title, category, or creator), and purchase premium 3D CAD assets
 - **WalletConnect (AppKit)** - Connect with over 300+ crypto wallets seamlessly
-- **User Profiles** - View owned NFTs, purchase history, and generated sales
+- **User Profiles** - Four tabs: owned NFTs, created items, sales, and full activity history (mints, purchases, sales, relists)
+- **Resell** - Re-list owned items back onto the marketplace at a new price via `relistToken`
 - **Live RPC Data** - Direct blockchain interaction via `eth_getBalance` and `eth_sendTransaction`
+- **Runtime Config** - Contract address, chain, and listing fee fetched from the backend on launch, so a contract redeploy is picked up without an app rebuild
+- **Light / Dark Theme** - Persisted monochrome theme with a runtime toggle in Settings
 - **Sepolia Testnet** - Built strictly for the Ethereum Sepolia testnet
 
 ## Tech Stack
@@ -31,7 +34,8 @@ app/src/main/java/com/example/chaintorquenative/
 ├── mobile/
 │   ├── data/
 │   │   ├── api/           # Retrofit services & models
-│   │   └── repository/    # Data repositories (Web3 & Market)
+│   │   ├── config/        # AppConfig — runtime config from GET /api/config
+│   │   └── repository/    # Data repositories (Web3, Market, User, Config)
 │   └── ui/
 │       └── viewmodel/     # Screen ViewModels
 ├── ui/
@@ -63,7 +67,11 @@ Create a `local.properties` file in the root directory (`ChainTorque_Native/loca
 WALLET_CONNECT_PROJECT_ID="your_walletconnect_project_id_here"
 
 # The deployed ChainTorque Smart Contract Address on Sepolia
+# Used as a compile-time fallback; the live value is fetched from GET /api/config at runtime.
 CONTRACT_ADDRESS="0x9685Ac9d1d63C1442161e64A7A325Eaa7a505F00"
+
+# Sepolia JSON-RPC endpoint (optional; defaults to https://rpc.sepolia.org)
+RPC_URL="https://rpc.sepolia.org"
 ```
 
 ### Build
@@ -74,11 +82,14 @@ CONTRACT_ADDRESS="0x9685Ac9d1d63C1442161e64A7A325Eaa7a505F00"
 ## API Endpoints
 
 The app connects to the ChainTorque backend server for off-chain metadata:
+- `GET /api/config` - Runtime config (contract address, chain ID, listing fee)
 - `GET /api/marketplace` - List NFT assets
 - `GET /api/marketplace/:id` - Asset details
 - `POST /api/marketplace/sync-purchase` - Sync blockchain purchases to DB
+- `POST /api/marketplace/sync-relist` - Sync blockchain relists to DB
 - `GET /api/user/:address/nfts` - User's NFTs
 - `GET /api/user/:address/sales` - User's sales history
+- `GET /api/user/:address/transactions` - User's full transaction history
 
 ## Testing
 
