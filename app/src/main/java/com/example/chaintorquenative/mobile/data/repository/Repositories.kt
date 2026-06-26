@@ -163,4 +163,34 @@ class Web3Repository @Inject constructor(
             "0.0000"
         }
     }
+
+    /**
+     * Encodes the calldata for buyToken(uint256)
+     * Function Selector: 0xc2db2c42
+     */
+    fun encodeBuyTokenData(tokenId: Int): String {
+        val functionSelector = "0xc2db2c42"
+        val paddedTokenId = "%064x".format(tokenId)
+        return functionSelector + paddedTokenId
+    }
+
+    /**
+     * Encodes the calldata for relistToken(uint256,uint128)
+     * Function Selector: 0x417c7275
+     */
+    fun encodeRelistTokenData(tokenId: Int, priceEth: Double): String {
+        val selector = "0x417c7275"
+        val paddedTokenId = "%064x".format(tokenId)
+        val priceWei = BigDecimal(priceEth).multiply(ETH_DECIMALS).toBigInteger()
+        val paddedPrice = "%064x".format(priceWei)
+        return selector + paddedTokenId + paddedPrice
+    }
+
+    /**
+     * Converts an ETH decimal value to a Wei Hex string (e.g. for transaction value)
+     */
+    fun parseEthToWeiHex(ethValue: Double): String {
+        val wei = BigDecimal(ethValue).multiply(ETH_DECIMALS).toBigInteger()
+        return "0x" + wei.toString(16)
+    }
 }

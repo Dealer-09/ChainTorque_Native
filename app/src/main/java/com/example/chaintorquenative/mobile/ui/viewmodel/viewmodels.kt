@@ -109,12 +109,8 @@ class MarketplaceViewModel @Inject constructor(
                 }
             }
 
-            val functionSelector = "0xc2db2c42"
-            val paddedTokenId    = "%064x".format(tokenId)
-            val data             = functionSelector + paddedTokenId
-
-            val priceWei  = java.math.BigDecimal(price).multiply(java.math.BigDecimal.TEN.pow(18)).toBigInteger()
-            val valueHex  = "0x" + priceWei.toString(16)
+            val data     = web3Repository.encodeBuyTokenData(tokenId)
+            val valueHex = web3Repository.parseEthToWeiHex(price)
 
             walletConnectManager.sendTransaction(
                 fromAddress = buyerAddress,
@@ -200,12 +196,16 @@ class UserProfileViewModel @Inject constructor(
             _loading.value = true
             _error.value   = null
 
-            // Register (fire-and-forget)
-            userRepository.registerUser(address)
-                .onSuccess { _userProfile.value = it }
-                .onFailure { android.util.Log.w("UserProfileVM", "register: ${it.message}") }
+            // Register first to ensure the backend creates the user document if they are new
+            try {
+                val result = userRepository.registerUser(address)
+                result.onSuccess { _userProfile.value = it }
+                      .onFailure { android.util.Log.w("UserProfileVM", "register: ${it.message}") }
+            } catch (e: Exception) {
+                android.util.Log.w("UserProfileVM", "register failed: ${e.message}")
+            }
 
-            // Load purchases + created NFTs + sales concurrently
+            // Load purchases + created NFTs + sales concurrently AFTER registration
             val purchasesJob = launch {
                 userRepository.getUserPurchases(address)
                     .onSuccess { _userPurchases.postValue(it) }
@@ -252,11 +252,7 @@ class UserProfileViewModel @Inject constructor(
             _relisting.value = true
             _error.value     = null
 
-            val selector      = "0x417c7275"              // relistToken(uint256,uint128)
-            val paddedTokenId = "%064x".format(tokenId)
-            val priceWei      = java.math.BigDecimal(newPriceEth).multiply(java.math.BigDecimal.TEN.pow(18)).toBigInteger()
-            val paddedPrice   = "%064x".format(priceWei)
-            val data          = selector + paddedTokenId + paddedPrice
+            val data = web3Repository.encodeRelistTokenData(tokenId, newPriceEth)
 
             android.util.Log.d("UserProfileVM", "relistItem token=$tokenId price=$newPriceEth seller=$sellerAddress")
 

@@ -21,8 +21,8 @@ android {
         applicationId = "com.example.chaintorquenative"
         minSdk = 33
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.4"
+        versionCode = 3
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -35,6 +35,9 @@ android {
         )
         buildConfigField("String", "RPC_URL",
             "\"${localProperties.getProperty("RPC_URL", "https://rpc.sepolia.org")}\""
+        )
+        buildConfigField("String", "API_BASE_URL",
+            "\"${localProperties.getProperty("API_BASE_URL", "https://chaintorque-backend.onrender.com/")}\""
         )
     }
     buildTypes {

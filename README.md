@@ -64,7 +64,7 @@ Create a `local.properties` file in the root directory (`ChainTorque_Native/loca
 
 ```properties
 # Reown AppKit / WalletConnect Cloud Project ID
-WALLET_CONNECT_PROJECT_ID="your_walletconnect_project_id_here"
+WALLETCONNECT_PROJECT_ID="your_walletconnect_project_id_here"
 
 # The deployed ChainTorque Smart Contract Address on Sepolia
 # Used as a compile-time fallback; the live value is fetched from GET /api/config at runtime.

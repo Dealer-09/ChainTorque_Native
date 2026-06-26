@@ -20,8 +20,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // Primary backend URL (original Render account)
-    private const val PRIMARY_URL = "https://chaintorque-backend.onrender.com/"
+    // Primary backend URL (read from local.properties/BuildConfig, defaults to production)
+    private val PRIMARY_URL = BuildConfig.API_BASE_URL
     // Fallback backend URL (new Render account)
     private const val FALLBACK_URL = "https://chain-torque-backend.onrender.com/"
     
@@ -51,7 +51,7 @@ object NetworkModule {
                 System.currentTimeMillis() - fallbackSwitchedAtMs > RECOVERY_INTERVAL_MS
             ) {
                 activeBaseUrl = PRIMARY_URL
-                android.util.Log.d("NetworkModule", "🔄 Recovery: retrying primary $PRIMARY_URL")
+                android.util.Log.d("NetworkModule", "🔄 Recovery: retrying primary $activeBaseUrl")
             }
 
             // Rewrite URL to activeBaseUrl if needed
@@ -70,8 +70,7 @@ object NetworkModule {
                     response.close()
                     switchToFallback("5xx response")
                     
-                    val newUrl = requestToExecute.url.toString()
-                        .replace(PRIMARY_URL, FALLBACK_URL)
+                    val newUrl = requestToExecute.url.toString().replace(PRIMARY_URL, FALLBACK_URL)
                     val fallbackRequest = requestToExecute.newBuilder()
                         .url(newUrl)
                         .build()
@@ -85,8 +84,7 @@ object NetworkModule {
                 if (activeBaseUrl == PRIMARY_URL) {
                     switchToFallback("IOException: ${e.message}")
                     
-                    val newUrl = requestToExecute.url.toString()
-                        .replace(PRIMARY_URL, FALLBACK_URL)
+                    val newUrl = requestToExecute.url.toString().replace(PRIMARY_URL, FALLBACK_URL)
                     val fallbackRequest = requestToExecute.newBuilder()
                         .url(newUrl)
                         .build()

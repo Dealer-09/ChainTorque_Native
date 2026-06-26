@@ -63,7 +63,7 @@ fun SettingsScreen() {
 
             // ── About (static info, no chevron) ──────────────────────────────
             SettingsSection(title = "About") {
-                SettingsItem(icon = Icons.Filled.Info,  title = "App Version", subtitle = "1.4")
+                SettingsItem(icon = Icons.Filled.Info,  title = "App Version", subtitle = "1.5")
                 SettingsItem(icon = Icons.Filled.Code,  title = "Network",     subtitle = "Ethereum Sepolia Testnet")
             }
 
